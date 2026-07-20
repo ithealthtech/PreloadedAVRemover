@@ -7,7 +7,22 @@ namespace PreloadedAVRemover.Core;
 public sealed class RemovalCatalog
 {
     private readonly IReadOnlyList<CatalogEntry> _entries;
-    public RemovalCatalog(IReadOnlyList<CatalogEntry> entries) => _entries = entries;
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
+    public RemovalCatalog(IReadOnlyList<CatalogEntry> entries)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        var duplicate = entries.GroupBy(e => e.Id, StringComparer.OrdinalIgnoreCase).FirstOrDefault(g => g.Count() > 1);
+        if (duplicate is not null) throw new InvalidDataException($"Duplicate catalog ID: {duplicate.Key}");
+        foreach (var entry in entries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Id) || string.IsNullOrWhiteSpace(entry.Brand) || string.IsNullOrWhiteSpace(entry.ProductPattern) || string.IsNullOrWhiteSpace(entry.DetectionMethod) || string.IsNullOrWhiteSpace(entry.Notes))
+                throw new InvalidDataException("Catalog entries require ID, brand, product pattern, detection method, and notes.");
+            if (!Enum.IsDefined(entry.PackageType) || !Enum.IsDefined(entry.RiskLevel)) throw new InvalidDataException($"Catalog entry {entry.Id} contains an invalid enum value.");
+            try { _ = new Regex(entry.ProductPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexTimeout); }
+            catch (ArgumentException ex) { throw new InvalidDataException($"Catalog entry {entry.Id} contains an invalid product pattern.", ex); }
+        }
+        _entries = entries.ToArray();
+    }
     public IReadOnlyList<CatalogEntry> Entries => _entries;
 
     public static RemovalCatalog LoadEmbedded()
@@ -24,21 +39,59 @@ public sealed class RemovalCatalog
         var matches = new List<PlanItem>();
         foreach (var item in inventory)
         {
-            var candidates = _entries.Where(e => e.PackageType == item.PackageType && Regex.IsMatch(item.Name, e.ProductPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
+            var candidates = _entries.Where(e => e.PackageType == item.PackageType && IsNameMatch(item.Name, e.ProductPattern)).ToList();
+            var exactPackageType = candidates.Count > 0;
             if (candidates.Count == 0 && item.PackageType is PackageType.Msi or PackageType.Exe)
-                candidates = _entries.Where(e => e.PackageType is PackageType.Msi or PackageType.Exe && Regex.IsMatch(item.Name, e.ProductPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
-            foreach (var entry in candidates)
+                candidates = _entries.Where(e => e.PackageType is PackageType.Msi or PackageType.Exe && IsNameMatch(item.Name, e.ProductPattern)).ToList();
+
+            var scored = candidates.Where(e => BrandMatches(e.Brand, device.Manufacturer, item.Publisher))
+                .Select(e => Score(e, item, device, exactPackageType)).ToList();
+            if (scored.Count == 0) continue;
+            var highest = scored.Max(x => x.Confidence);
+            var finalists = scored.Where(x => x.Confidence == highest).ToList();
+            foreach (var candidate in finalists)
             {
-                if (!BrandMatches(entry.Brand, device.Manufacturer, item.Publisher)) continue;
-                matches.Add(new PlanItem(item, entry, PolicyEvaluator.Evaluate(item, entry, policy)));
+                var decision = finalists.Count > 1
+                    ? new PolicyDecision(DecisionAction.ManualReview, $"Ambiguous catalog match ({string.Join(", ", finalists.Select(x => x.Entry.Id))})")
+                    : candidate.Confidence < 70
+                        ? new PolicyDecision(DecisionAction.ManualReview, $"Low-confidence catalog match ({candidate.Confidence}%)")
+                        : IsActiveSecurityProduct(item, device) && !policy.AllowSecurityProductRemoval
+                            ? new PolicyDecision(DecisionAction.AuditOnly, "Active endpoint protection detected by Windows Security Center; explicit security-product authorization is required")
+                            : PolicyEvaluator.Evaluate(item, candidate.Entry, policy);
+                matches.Add(new PlanItem(item, candidate.Entry, decision, candidate.Confidence, candidate.Rationale));
             }
         }
         return matches.GroupBy(x => $"{x.Inventory.Id}|{x.Catalog.Id}", StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
     }
 
+    private static bool IsNameMatch(string name, string pattern) => Regex.IsMatch(name, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexTimeout);
+
+    private static (CatalogEntry Entry, int Confidence, IReadOnlyList<string> Rationale) Score(CatalogEntry entry, InventoryItem item, DeviceIdentity device, bool exactPackageType)
+    {
+        var rationale = new List<string> { "Product name matched catalog pattern" };
+        var score = 45;
+        if (exactPackageType) { score += 20; rationale.Add("Package type matched exactly"); }
+        else { score += 10; rationale.Add("MSI/EXE registry installer fallback matched"); }
+
+        if (entry.Brand.Equals("Any", StringComparison.OrdinalIgnoreCase)) { score += 5; rationale.Add("Catalog entry is vendor-neutral"); }
+        else
+        {
+            if (ManufacturerMatches(entry.Brand, device.Manufacturer)) { score += 15; rationale.Add("Device manufacturer matched catalog brand"); }
+            if (item.Publisher.Contains(entry.Brand, StringComparison.OrdinalIgnoreCase) || item.Publisher.Contains(entry.Vendor, StringComparison.OrdinalIgnoreCase)) { score += 15; rationale.Add("Publisher matched catalog vendor/brand"); }
+        }
+        if (!string.IsNullOrWhiteSpace(item.DetectionMethod)) { score += 5; rationale.Add($"Detected through {item.DetectionMethod}"); }
+        return (entry, Math.Min(score, 100), rationale);
+    }
+
+    private static bool IsActiveSecurityProduct(InventoryItem item, DeviceIdentity device) =>
+        device.SecurityProducts.Any(product => item.Name.Contains(product, StringComparison.OrdinalIgnoreCase) || product.Contains(item.Name, StringComparison.OrdinalIgnoreCase));
+
     private static bool BrandMatches(string brand, string manufacturer, string publisher) =>
-        brand.Equals("Any", StringComparison.OrdinalIgnoreCase) || manufacturer.Contains(brand, StringComparison.OrdinalIgnoreCase) ||
+        brand.Equals("Any", StringComparison.OrdinalIgnoreCase) || ManufacturerMatches(brand, manufacturer) ||
         publisher.Contains(brand, StringComparison.OrdinalIgnoreCase) ||
+        publisher.Contains(brand.Equals("Alienware", StringComparison.OrdinalIgnoreCase) ? "Dell" : brand, StringComparison.OrdinalIgnoreCase);
+
+    private static bool ManufacturerMatches(string brand, string manufacturer) => manufacturer.Contains(brand, StringComparison.OrdinalIgnoreCase) ||
         (brand.Equals("Alienware", StringComparison.OrdinalIgnoreCase) && manufacturer.Contains("Dell", StringComparison.OrdinalIgnoreCase)) ||
         (brand.Equals("Dynabook", StringComparison.OrdinalIgnoreCase) && (manufacturer.Contains("TOSHIBA", StringComparison.OrdinalIgnoreCase) || manufacturer.Contains("Dynabook", StringComparison.OrdinalIgnoreCase)));
 }
@@ -51,6 +104,7 @@ public static class PolicyEvaluator
         "teamviewer", "splashtop", "anydesk", "beyondtrust", "bomgar", "logmein", "goto resolve", "rmm", "remote monitoring",
         "bitlocker", "veeam", "acronis", "carbonite", "backblaze", "crashplan", "backup agent",
         "forticlient", "globalprotect", "cisco secure client", "anyconnect", "zscaler", "netskope", "openvpn", "wireguard",
+        "microsoft defender", "windows defender", "recovery", "restore", "warranty", "sure recover",
         "chipset", "bluetooth", "wireless", "wi-fi", "ethernet", "audio driver", "graphics driver", "display driver", "hotkey", "firmware", "bios", "thunderbolt"
     ];
 

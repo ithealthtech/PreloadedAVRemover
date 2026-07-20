@@ -41,6 +41,19 @@ public sealed class EngineAuditReportTests
     }
 
     [Fact]
+    public async Task ProcessTimeout_IsReportedDistinctly()
+    {
+        var provider = new MockInventoryProvider { Items = [TestData.Msi()] };
+        var runner = new FakeRunner { Exception = new ProcessTimeoutException("timed out") };
+        var engine = new CleanupEngine(provider, new RemovalCatalog([TestData.Entry()]), runner);
+        var policy = new CleanupPolicy { DryRun = false, ProcessTimeoutSeconds = 45 };
+        var log = Path.Combine(TestData.TempDirectory(), "audit.jsonl");
+        var report = engine.Audit(policy, "execution", log);
+        var result = Assert.Single(await engine.ExecuteAsync(report.Before, policy, "execution", log));
+        Assert.Equal(ExecutionOutcome.TimedOut, result.Outcome); Assert.Contains("timed out", result.Message); Assert.Equal(45, runner.LastCommand!.TimeoutSeconds);
+    }
+
+    [Fact]
     public void EmptyInventory_ModelsMissingRegistryKeysWithoutFailure()
     {
         var provider = new MockInventoryProvider { Items = [] }; var engine = new CleanupEngine(provider, new RemovalCatalog([TestData.Entry()]), new FakeRunner());
@@ -68,7 +81,7 @@ public sealed class EngineAuditReportTests
         report.Results = report.Before.Select(x => new ExecutionResult(x, ExecutionOutcome.Detected, null, "detected", false, DateTimeOffset.UtcNow)).ToList(); report.After = report.Before; report.AfterInventory = report.FullInventory;
         var paths = ReportWriter.Write(report, dir);
         Assert.True(File.Exists(paths.Json)); Assert.True(File.Exists(paths.Html));
-        using var json = JsonDocument.Parse(File.ReadAllText(paths.Json)); Assert.Equal("2.0", json.RootElement.GetProperty("schemaVersion").GetString());
+        using var json = JsonDocument.Parse(File.ReadAllText(paths.Json)); Assert.Equal("2.2", json.RootElement.GetProperty("schemaVersion").GetString());
         var html = File.ReadAllText(paths.Html); Assert.DoesNotContain("<script>alert", html); Assert.Contains("&lt;script&gt;", html);
     }
 

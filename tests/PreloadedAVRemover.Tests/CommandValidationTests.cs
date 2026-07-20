@@ -44,6 +44,24 @@ public sealed class CommandValidationTests
     }
 
     [Fact]
+    public void EnvironmentExpandedRegistryPath_IsRejected()
+    {
+        var item = new InventoryItem("id", "OEM App", "1", "OEM", PackageType.Exe, "Registry", @"%ProgramFiles%\Vendor\uninstall.exe /silent");
+        var result = CommandValidator.Validate(TestData.Plan(item, TestData.Entry(PackageType.Exe)));
+        Assert.False(result.IsValid); Assert.Contains("Environment-expanded", result.Reason);
+    }
+
+    [Theory]
+    [InlineData(1, 30)]
+    [InlineData(900, 900)]
+    [InlineData(9999, 3600)]
+    public void CommandTimeout_IsBounded(int configured, int expected)
+    {
+        var result = CommandValidator.Validate(TestData.Plan(TestData.Msi(), TestData.Entry()), configured);
+        Assert.True(result.IsValid); Assert.Equal(expected, result.Command!.TimeoutSeconds);
+    }
+
+    [Fact]
     public void AppxPackageName_IsValidated()
     {
         var good = new InventoryItem("app", "Clipchamp", "1", "Microsoft", PackageType.Appx, "AppX", PackageFullName: "Clipchamp.Clipchamp_1.2.3_x64__abc");

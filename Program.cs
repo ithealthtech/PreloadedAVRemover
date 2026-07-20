@@ -27,6 +27,7 @@ internal sealed record UiEntry(PlanItem Plan)
     public string Brand => Plan.Catalog.Brand;
     public string Type => Plan.Inventory.PackageType.ToString();
     public string Risk => Plan.Catalog.RiskLevel.ToString();
+    public string Confidence => $"{Plan.MatchConfidence}%";
     public string Decision => Plan.Decision.Action.ToString();
     public string Reason => Plan.Decision.Reason;
 }
@@ -67,7 +68,7 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         _engine = new CleanupEngine(new WindowsInventoryProvider(), RemovalCatalog.LoadEmbedded(), new ProcessRunner());
-        Text = "OEM Endpoint Cleanup 2.1.0";
+        Text = "OEM Endpoint Cleanup 2.2.0";
         MinimumSize = new Size(860, 620);
         Size = new Size(1280, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -116,7 +117,7 @@ internal sealed class MainForm : Form
     {
         var mark = new ShieldMark { Size = new Size(58, 58), Margin = new Padding(0, 2, 18, 0) };
         var heading = new Label { Text = "OEM Endpoint Cleanup", Font = new Font("Segoe UI Semibold", 22), ForeColor = Color.White, AutoSize = true, Margin = new Padding(0) };
-        var version = new Label { Text = "SECURE AUDIT + REMOVAL  /  VERSION 2.1.0", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
+        var version = new Label { Text = "SECURE AUDIT + REMOVAL  /  VERSION 2.2.0", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
         _headerDetail = new Label { Text = "Inventory OEM software, apply policy, validate every command, and produce MSP-ready evidence.", Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
         var text = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0) };
         text.Controls.AddRange([heading, version, _headerDetail]);
@@ -153,6 +154,7 @@ internal sealed class MainForm : Form
         _logRow.Height = shortWindow ? 26 : 34;
         _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 940;
         _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 900;
+        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1120;
         _contentLayout.PerformLayout();
     }
 
@@ -180,6 +182,7 @@ internal sealed class MainForm : Form
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Brand), DataPropertyName = nameof(UiEntry.Brand), HeaderText = "BRAND", FillWeight = 12 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Type), DataPropertyName = nameof(UiEntry.Type), HeaderText = "TYPE", FillWeight = 10 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Risk), DataPropertyName = nameof(UiEntry.Risk), HeaderText = "RISK", FillWeight = 11 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Confidence), DataPropertyName = nameof(UiEntry.Confidence), HeaderText = "MATCH", FillWeight = 9 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Decision), DataPropertyName = nameof(UiEntry.Decision), HeaderText = "DECISION", FillWeight = 13 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Reason), DataPropertyName = nameof(UiEntry.Reason), HeaderText = "POLICY REASON", FillWeight = 25 });
     }
@@ -214,7 +217,7 @@ internal sealed class MainForm : Form
         var selected = _grid.SelectedRows.Cast<DataGridViewRow>().Select(r => r.DataBoundItem as UiEntry).Where(x => x?.Plan.Decision.Action == DecisionAction.Remove).Cast<UiEntry>().Select(x => x.Plan).ToList();
         if (selected.Count == 0) { MessageBox.Show("Select one or more entries whose policy decision is Remove.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
         var policy = CurrentPolicy();
-            if (!policy.DryRun && !policy.Force)
+        if (!policy.DryRun && !policy.Force)
         {
             var securityCount = selected.Count(x => x.Catalog.IsSecurityProduct);
             var warning = $"This will execute validated uninstallers for {selected.Count} selected product(s)." + (securityCount > 0 ? $"{Environment.NewLine}{securityCount} endpoint-protection product(s) are included." : "") + $"{Environment.NewLine}{Environment.NewLine}Continue?";
@@ -235,7 +238,7 @@ internal sealed class MainForm : Form
             (_jsonReportPath, _htmlReportPath) = ReportWriter.Write(_report, ReportDirectory(policy));
             foreach (var result in selectedResults) Log($"{result.Outcome}: {result.Plan.Inventory.Name}; Exit={result.ExitCode?.ToString() ?? "n/a"}; {result.Message}; Reboot={result.RebootRequired}");
             _summary.Text = policy.DryRun ? "Dry-run complete - no changes made" : "Removal pass complete";
-            _resultCount.Text = $"Before matches: {_report.Before.Count}; after matches: {_report.After.Count}; failures: {_report.Results.Count(x => x.Outcome == ExecutionOutcome.Failed)}";
+            _resultCount.Text = $"Before matches: {_report.Before.Count}; after matches: {_report.After.Count}; failures/timeouts: {_report.Results.Count(x => x.Outcome is ExecutionOutcome.Failed or ExecutionOutcome.TimedOut)}";
             _hasExecuted = true; _export.Enabled = true;
         }
         catch (Exception ex) { Log("EXECUTION FAILED: " + ex.Message); MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error); }
@@ -245,8 +248,13 @@ internal sealed class MainForm : Form
     private CleanupPolicy CurrentPolicy() => new()
     {
         Profile = Enum.TryParse<PolicyProfile>(_profile.SelectedItem?.ToString(), out var p) ? p : PolicyProfile.Conservative,
-        DryRun = !_execute.Checked, Force = _config.Force, AllowSecurityProductRemoval = _allowSecurity.Checked,
-        AllowList = _config.AllowList, BlockList = _config.BlockList, ReportDirectory = string.IsNullOrWhiteSpace(_config.ReportDirectory) ? PolicyConfiguration.DefaultReportDirectory() : _config.ReportDirectory
+        DryRun = !_execute.Checked,
+        Force = _config.Force,
+        AllowSecurityProductRemoval = _allowSecurity.Checked,
+        ProcessTimeoutSeconds = _config.ProcessTimeoutSeconds,
+        AllowList = _config.AllowList,
+        BlockList = _config.BlockList,
+        ReportDirectory = string.IsNullOrWhiteSpace(_config.ReportDirectory) ? PolicyConfiguration.DefaultReportDirectory() : _config.ReportDirectory
     };
 
     private static Dictionary<string, int> BuildSummary(AuditReport report)
@@ -291,7 +299,7 @@ internal static class StartupCrashReporter
             var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OemCleanup", "CrashLogs");
             Directory.CreateDirectory(directory);
             path = Path.Combine(directory, $"crash-{Environment.MachineName}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.log");
-            File.WriteAllText(path, $"TimestampUtc: {DateTimeOffset.UtcNow:O}{Environment.NewLine}Stage: {stage}{Environment.NewLine}Hostname: {Environment.MachineName}{Environment.NewLine}User: {Environment.UserName}{Environment.NewLine}OS: {System.Runtime.InteropServices.RuntimeInformation.OSDescription}{Environment.NewLine}Process: {Environment.ProcessPath}{Environment.NewLine}Version: 2.1.0{Environment.NewLine}{Environment.NewLine}{exception}");
+            File.WriteAllText(path, $"TimestampUtc: {DateTimeOffset.UtcNow:O}{Environment.NewLine}Stage: {stage}{Environment.NewLine}Hostname: {Environment.MachineName}{Environment.NewLine}User: {Environment.UserName}{Environment.NewLine}OS: {System.Runtime.InteropServices.RuntimeInformation.OSDescription}{Environment.NewLine}Process: {Environment.ProcessPath}{Environment.NewLine}Version: 2.2.0{Environment.NewLine}{Environment.NewLine}{exception}");
         }
         catch
         {

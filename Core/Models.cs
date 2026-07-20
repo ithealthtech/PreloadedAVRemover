@@ -6,7 +6,7 @@ public enum PackageType { Msi, Exe, Appx, Winget, Service, ScheduledTask, Regist
 public enum RiskLevel { Safe, Caution, ManualReview }
 public enum PolicyProfile { Conservative, Balanced, Aggressive }
 public enum DecisionAction { Remove, Skip, ManualReview, AuditOnly }
-public enum ExecutionOutcome { Detected, DryRun, Removed, Skipped, Failed, ManualReview, RebootRequired }
+public enum ExecutionOutcome { Detected, DryRun, Removed, Skipped, Failed, TimedOut, ManualReview, RebootRequired }
 
 public sealed record DeviceIdentity(string Hostname, string Manufacturer, string Model, string BiosVersion, string SerialNumber, string OsDescription, string OsVersion, string UserName, bool IsAdministrator, bool RebootPending, IReadOnlyList<string> SecurityProducts);
 
@@ -35,13 +35,14 @@ public sealed class CleanupPolicy
     public bool DryRun { get; init; } = true;
     public bool Force { get; init; }
     public bool AllowSecurityProductRemoval { get; init; }
+    public int ProcessTimeoutSeconds { get; init; } = 900;
     public string[] AllowList { get; init; } = [];
     public string[] BlockList { get; init; } = [];
     public string ReportDirectory { get; init; } = "";
 }
 
 public sealed record PolicyDecision(DecisionAction Action, string Reason, bool Forced = false);
-public sealed record PlanItem(InventoryItem Inventory, CatalogEntry Catalog, PolicyDecision Decision);
+public sealed record PlanItem(InventoryItem Inventory, CatalogEntry Catalog, PolicyDecision Decision, int MatchConfidence = 0, IReadOnlyList<string>? MatchRationale = null);
 public sealed record ExecutionResult(PlanItem Plan, ExecutionOutcome Outcome, int? ExitCode, string Message, bool RebootRequired, DateTimeOffset Timestamp);
 
 public sealed class AuditReport

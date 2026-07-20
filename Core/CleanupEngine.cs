@@ -23,7 +23,7 @@ public sealed class CleanupEngine
         log.Write(executionId, "Start", "Audit started", new { policy.Profile, policy.DryRun, policy.Force, policy.AllowSecurityProductRemoval, device });
         foreach (var item in all) log.Write(executionId, "Inventory", "Installed software detected", item);
         foreach (var item in plan) log.Write(executionId, "Decision", item.Decision.Reason, item);
-        return new AuditReport { SchemaVersion = "2.0", ExecutionId = executionId, StartedAt = DateTimeOffset.UtcNow, ExecutionMode = policy.DryRun ? "DryRun" : "Removal", Profile = policy.Profile, Device = device, FullInventory = all, Before = plan, AuditLogPath = logPath };
+        return new AuditReport { SchemaVersion = "2.2", ExecutionId = executionId, StartedAt = DateTimeOffset.UtcNow, ExecutionMode = policy.DryRun ? "DryRun" : "Removal", Profile = policy.Profile, Device = device, FullInventory = all, Before = plan, AuditLogPath = logPath };
     }
 
     public async Task<IReadOnlyList<ExecutionResult>> ExecuteAsync(IReadOnlyList<PlanItem> plan, CleanupPolicy policy, string executionId, string logPath, CancellationToken cancellationToken = default)
@@ -42,7 +42,7 @@ public sealed class CleanupEngine
             }
             else if (policy.DryRun)
             {
-                var validation = CommandValidator.Validate(item);
+                var validation = CommandValidator.Validate(item, policy.ProcessTimeoutSeconds);
                 result = new(item, ExecutionOutcome.DryRun, null, validation.IsValid ? "Dry-run: validated command; no changes made" : $"Dry-run: command rejected - {validation.Reason}", false, DateTimeOffset.UtcNow);
             }
             else if (!isAdmin)
@@ -51,18 +51,19 @@ public sealed class CleanupEngine
             }
             else
             {
-                var validation = CommandValidator.Validate(item);
+                var validation = CommandValidator.Validate(item, policy.ProcessTimeoutSeconds);
                 if (!validation.IsValid || validation.Command is null) result = new(item, ExecutionOutcome.Failed, null, validation.Reason, false, DateTimeOffset.UtcNow);
                 else
                 {
                     try
                     {
-                        log.Write(executionId, "Command", "Executing validated command", new { validation.Command.FileName, validation.Command.Arguments, validation.Command.Source });
+                        log.Write(executionId, "Command", "Executing validated command", new { validation.Command.FileName, validation.Command.Arguments, validation.Command.Source, validation.Command.TimeoutSeconds });
                         var exitCode = await _runner.RunAsync(validation.Command, cancellationToken);
                         var reboot = exitCode is 3010 or 1641 || item.Catalog.RebootRequired;
                         var outcome = exitCode is 0 or 3010 or 1641 ? (reboot ? ExecutionOutcome.RebootRequired : ExecutionOutcome.Removed) : ExecutionOutcome.Failed;
                         result = new(item, outcome, exitCode, outcome == ExecutionOutcome.Failed ? "Uninstaller returned a failure exit code" : "Validated uninstaller completed", reboot, DateTimeOffset.UtcNow);
                     }
+                    catch (ProcessTimeoutException ex) { result = new(item, ExecutionOutcome.TimedOut, null, ex.Message, false, DateTimeOffset.UtcNow); }
                     catch (Exception ex) { result = new(item, ExecutionOutcome.Failed, null, ex.Message, false, DateTimeOffset.UtcNow); }
                 }
             }

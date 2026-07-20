@@ -11,6 +11,8 @@ public sealed class CatalogPolicyTests
         foreach (var brand in new[] { "Dell", "HP", "ASUS", "Acer", "Lenovo", "MSI", "Samsung", "Dynabook", "Microsoft", "LG", "Gigabyte", "Razer", "Alienware", "Fujitsu" })
             Assert.Contains(catalog.Entries, e => e.Brand.Equals(brand, StringComparison.OrdinalIgnoreCase));
         foreach (var type in Enum.GetValues<PackageType>()) Assert.Contains(catalog.Entries, e => e.PackageType == type);
+        foreach (var id in new[] { "hp-quickdrop", "asus-glidex", "lenovo-smart-appearance", "samsung-galaxy-book-experience", "razer-axon" })
+            Assert.Contains(catalog.Entries, e => e.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
         Assert.All(catalog.Entries, e => { Assert.False(string.IsNullOrWhiteSpace(e.Notes)); Assert.False(string.IsNullOrWhiteSpace(e.DetectionMethod)); });
     }
 
@@ -88,5 +90,56 @@ public sealed class CatalogPolicyTests
             var catalog = new RemovalCatalog([TestData.Entry(type, brand: "Dell", pattern: "Mock OEM Item")]);
             Assert.Single(catalog.Match([item], TestData.Device(), new CleanupPolicy()));
         }
+    }
+
+    [Fact]
+    public void CatalogConstructor_RejectsDuplicateIdsAndMalformedRegex()
+    {
+        var duplicate = TestData.Entry();
+        Assert.Throws<InvalidDataException>(() => new RemovalCatalog([duplicate, TestData.Entry(PackageType.Exe)]));
+        Assert.Throws<InvalidDataException>(() => new RemovalCatalog([new CatalogEntry
+        {
+            Id = "bad", Vendor = "Test", Brand = "Any", ProductPattern = "[", PackageType = PackageType.Msi,
+            RiskLevel = RiskLevel.Safe, DetectionMethod = "Mock", Notes = "Test"
+        }]));
+    }
+
+    [Fact]
+    public void AmbiguousTopMatches_FailClosedWithRationale()
+    {
+        CatalogEntry Entry(string id) => new()
+        {
+            Id = id,
+            Vendor = "Dell",
+            Brand = "Dell",
+            ProductPattern = "OEM Utility",
+            PackageType = PackageType.Msi,
+            RiskLevel = RiskLevel.Safe,
+            DetectionMethod = "Mock",
+            Notes = "Test"
+        };
+        var matches = new RemovalCatalog([Entry("one"), Entry("two")]).Match([TestData.Msi("OEM Utility")], TestData.Device(), new CleanupPolicy());
+        Assert.Equal(2, matches.Count);
+        Assert.All(matches, match => { Assert.Equal(DecisionAction.ManualReview, match.Decision.Action); Assert.True(match.MatchConfidence >= 70); Assert.NotEmpty(match.MatchRationale!); });
+    }
+
+    [Fact]
+    public void ActiveSecurityCenterProduct_RequiresExplicitAuthorizationEvenIfCatalogFlagIsWrong()
+    {
+        var catalog = new RemovalCatalog([TestData.Entry(risk: RiskLevel.Safe, pattern: "Security Suite")]);
+        var item = TestData.Msi("Security Suite");
+        var device = TestData.Device(securityProducts: ["Security Suite"]);
+        Assert.Equal(DecisionAction.AuditOnly, Assert.Single(catalog.Match([item], device, new CleanupPolicy())).Decision.Action);
+        Assert.Equal(DecisionAction.Remove, Assert.Single(catalog.Match([item], device, new CleanupPolicy { AllowSecurityProductRemoval = true })).Decision.Action);
+    }
+
+    [Theory]
+    [InlineData("Microsoft Defender Antivirus")]
+    [InlineData("OEM Recovery Manager")]
+    [InlineData("Warranty Service")]
+    public void SecurityRecoveryAndWarrantySoftware_RemainProtected(string name)
+    {
+        var policy = new CleanupPolicy { Profile = PolicyProfile.Aggressive, BlockList = ["*"] };
+        Assert.Equal(DecisionAction.Skip, PolicyEvaluator.Evaluate(TestData.Msi(name), TestData.Entry(), policy).Action);
     }
 }
