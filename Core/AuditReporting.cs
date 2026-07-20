@@ -50,14 +50,16 @@ public static class ReportWriter
     private static string BuildHtml(AuditReport r)
     {
         static string E(string? value) => HtmlEncoder.Default.Encode(value ?? "");
-        var rows = string.Join("", r.Results.Select(x => $"<tr><td>{E(x.Plan.Inventory.Name)}</td><td>{E(x.Plan.Catalog.Brand)}</td><td>{x.Plan.Catalog.RiskLevel}</td><td>{x.Outcome}</td><td>{E(x.Message)}</td><td>{x.ExitCode}</td></tr>"));
+        var rows = string.Join("", r.Results.Select(x => $"<tr><td>{E(x.Plan.Inventory.Name)}</td><td>{E(x.Plan.Catalog.Brand)}</td><td>{x.Plan.Catalog.RiskLevel}</td><td>{x.Plan.MatchConfidence}%</td><td>{E(string.Join("; ", x.Plan.MatchRationale ?? []))}</td><td>{x.Outcome}</td><td>{E(x.Message)}</td><td>{x.ExitCode}</td></tr>"));
         var inventory = string.Join("", r.FullInventory.Select(x => $"<tr><td>{E(x.Name)}</td><td>{E(x.Version)}</td><td>{E(x.Publisher)}</td><td>{x.PackageType}</td><td>{E(x.DetectionMethod)}</td></tr>"));
+        var securityProducts = r.Device.SecurityProducts.Count == 0 ? "None reported" : string.Join(", ", r.Device.SecurityProducts.Select(E));
         return $$"""
         <!doctype html><html><head><meta charset="utf-8"><title>OEM Cleanup Audit</title>
         <style>body{font:14px Segoe UI,Arial;margin:32px;color:#1e293b}h1{color:#0f172a}.cards{display:flex;gap:14px}.card{padding:14px 18px;background:#f1f5f9;border-radius:8px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0}th{background:#f8fafc}.mono{font-family:Consolas,monospace}</style></head><body>
         <h1>OEM Cleanup Audit</h1><p class="mono">Execution {{E(r.ExecutionId)}} | {{E(r.ExecutionMode)}} | {{r.StartedAt:O}}</p>
         <div class="cards"><div class="card"><b>Device</b><br>{{E(r.Device.Manufacturer)}} {{E(r.Device.Model)}}</div><div class="card"><b>Hostname</b><br>{{E(r.Device.Hostname)}}</div><div class="card"><b>Matched before / after</b><br>{{r.Before.Count}} / {{r.After.Count}}</div><div class="card"><b>Inventory before / after</b><br>{{r.FullInventory.Count}} / {{r.AfterInventory.Count}}</div></div>
-        <h2>Execution results</h2><table><tr><th>Product</th><th>Brand</th><th>Risk</th><th>Outcome</th><th>Decision</th><th>Exit</th></tr>{{rows}}</table>
+        <h2>Device and security context</h2><p>OS: {{E(r.Device.OsDescription)}} ({{E(r.Device.OsVersion)}})<br>BIOS: {{E(r.Device.BiosVersion)}} | Serial: {{E(r.Device.SerialNumber)}}<br>User: {{E(r.Device.UserName)}} | Administrator: {{r.Device.IsAdministrator}} | Reboot pending: {{r.Device.RebootPending}}<br>Security products: {{securityProducts}}</p>
+        <h2>Execution results</h2><table><tr><th>Product</th><th>Brand</th><th>Risk</th><th>Confidence</th><th>Match evidence</th><th>Outcome</th><th>Decision</th><th>Exit</th></tr>{{rows}}</table>
         <h2>Full installed software inventory</h2><table><tr><th>Name</th><th>Version</th><th>Publisher</th><th>Type</th><th>Detection</th></tr>{{inventory}}</table>
         <p>Audit log SHA-256: <span class="mono">{{E(r.AuditLogSha256)}}</span><br>Execution log SHA-256: <span class="mono">{{E(r.ExecutionLogSha256)}}</span></p></body></html>
         """;

@@ -25,8 +25,8 @@ WinForms UI
 
 - `Core/Models.cs`: stable inventory, catalog, policy, plan, result, device, and report contracts.
 - `Core/WindowsInventoryProvider.cs`: registry, WMI, Security Center, AppX, service, scheduled-task, manufacturer, BIOS, serial, admin, and reboot inventory.
-- `Core/CatalogPolicy.cs`: embedded catalog loading, brand/product matching, policy profiles, allow/block lists, and protected-software guards.
-- `Core/SecurityExecution.cs`: fail-closed command validation and direct process execution abstraction.
+- `Core/CatalogPolicy.cs`: validated catalog loading, evidence-scored brand/product matching, ambiguity handling, policy profiles, allow/block lists, and protected-software guards.
+- `Core/SecurityExecution.cs`: fail-closed command validation, bounded direct process execution, and distinct timeout handling.
 - `Core/AuditReporting.cs`: hash-chained JSONL logging and JSON/HTML report generation.
 - `Core/CleanupEngine.cs`: audit, dry-run/removal orchestration, result capture, and post-execution inventory.
 - `Core/Configuration.cs`: organization policy loading with conservative dry-run fallback.
@@ -38,4 +38,6 @@ WinForms UI
 Installed-app metadata and registry uninstall strings are untrusted input. Catalog matching alone never executes a command. Policy must authorize removal, the selected backend must support safe automation, elevation must be present, and command validation must succeed before `IProcessRunner` receives a process specification.
 
 Protected software and security products are evaluated before organization blocklists. This prevents a broad wildcard from removing RMM, VPN, backup, encryption, drivers, firmware, or active endpoint protection.
+
+Catalog matches carry a 0–100 confidence score plus human- and machine-readable rationale. Low-confidence matches and tied highest-confidence candidates become manual-review decisions; they never reach command validation. Active Security Center products are independently guarded so removal does not depend solely on a catalog flag.
 

@@ -3,6 +3,7 @@
   "dryRun": true,
   "force": false,
   "allowSecurityProductRemoval": false,
+  "processTimeoutSeconds": 900,
   "allowList": [
     "Lenovo Vantage",
     "*SupportAssist*"

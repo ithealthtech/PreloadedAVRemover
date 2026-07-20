@@ -1,4 +1,4 @@
-# Test report — OEM Endpoint Cleanup 2.1.0
+# Test report — OEM Endpoint Cleanup 2.2.0
 
 Date: 2026-07-19  
 Target: Windows x64, .NET 8  
@@ -6,7 +6,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 
 ## Result
 
-- Passed: 46
+- Passed: 57
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -14,17 +14,22 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 ## Tested areas
 
 - Embedded catalog loads and covers every required OEM brand.
+- Catalog regression coverage includes HP QuickDrop, ASUS GlideX, Lenovo Smart Appearance, Samsung Galaxy Book Experience, and Razer Axon.
 - Catalog includes MSI, EXE, AppX/MSIX, winget, service, scheduled-task, and registry-entry package types.
 - Brand and product matching uses manufacturer and publisher evidence.
+- Match confidence and rationale are emitted; tied candidates fail closed as manual review.
+- Duplicate catalog IDs and malformed catalog regular expressions are rejected.
 - MSI/EXE registry classification fallback works without duplicate exact matches.
 - Conservative, balanced, and aggressive risk rules.
 - Allowlist precedence and blocklist force-eligibility behavior.
 - Protected RMM, remote-access, VPN, backup, BitLocker/firmware/driver-style software remains skipped.
 - Endpoint protection is audit-only by default and becomes eligible only after explicit authorization.
+- Active Security Center protection is guarded independently from catalog security metadata.
 - Existing McAfee AV matching/removal policy regression.
 - MSI commands are rebuilt from validated product GUIDs.
 - Existing direct EXE commands, including unquoted paths containing spaces, are parsed without a shell.
 - Malformed, relative, missing, control-character, shell-host, and script-host uninstall commands fail closed.
+- Environment-expanded registry paths are rejected and command timeouts are clamped to 30–3600 seconds.
 - Valid and malicious AppX package identifiers.
 - Unavailable winget behavior.
 - Service, scheduled-task, and registry backends fail closed without dedicated handlers.
@@ -32,9 +37,10 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Dry-run never invokes the process runner.
 - Non-admin removal fails without invoking the process runner.
 - Success, failure (`1603`), reboot-required (`3010`), and initiated-reboot (`1641`) exit paths.
+- Process timeouts are captured as a distinct auditable outcome.
 - Empty inventory/missing-source behavior.
 - Hash-chain linkage, hostname context, and whole-file SHA-256 generation.
-- JSON report schema and HTML escaping.
+- JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.
 - Policy loading, missing policy defaults, and malformed-policy fail-closed behavior.
 - Read-only integration inventory against the local Windows registry, WMI, AppX metadata, services, and scheduled tasks.
 
