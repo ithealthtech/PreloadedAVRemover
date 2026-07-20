@@ -1,9 +1,10 @@
 bin/
 obj/
+**/bin/
+**/obj/
 publish/
 .vs/
 *.user
 *.suo
 *.pdb
 *.log
-
