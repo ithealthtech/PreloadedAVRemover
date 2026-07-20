@@ -7,6 +7,12 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 ![Version](https://img.shields.io/badge/version-2.2.0-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
+## Application preview
+
+![OEM Endpoint Cleanup audit-first WinForms interface](docs/images/oem-endpoint-cleanup.png)
+
+The preview is generated before inventory begins and contains no hostname, serial number, installed-software inventory, or customer/device data.
+
 ## OEM and software coverage
 
 The embedded catalog includes Dell, Alienware, HP, ASUS, Acer, Lenovo, MSI, Samsung, Toshiba/Dynabook, Microsoft Surface, LG, Gigabyte, Razer, and Fujitsu. It also recognizes common:
