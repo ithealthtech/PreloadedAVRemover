@@ -4,7 +4,7 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20x64-2563eb)
 ![Framework](https://img.shields.io/badge/.NET-8.0-512bd4)
-![Version](https://img.shields.io/badge/version-2.2.0-0f766e)
+![Version](https://img.shields.io/badge/version-2.2.1--rc.1-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
 ## Application preview
