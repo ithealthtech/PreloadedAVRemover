@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>OEMEndpointCleanupSetup</AssemblyName>
+    <RootNamespace>PreloadedAVRemover.Setup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Company>IT Health Tech LLC</Company>
+    <Authors>IT Health Tech LLC</Authors>
+    <Copyright>Copyright © 2026 IT Health Tech LLC</Copyright>
+    <Version>$(SetupVersion)</Version>
+    <FileVersion>$(SetupFileVersion)</FileVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Installer.Core\Installer.Core.csproj" />
+    <EmbeddedResource Include="..\Branding\it-health-tech-logo.png" LogicalName="ItHealthTechLogo" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>InstallerMsiFileName</_Parameter1>
+      <_Parameter2>$(InstallerMsiFileName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>InstallerMsiSha256</_Parameter1>
+      <_Parameter2>$(InstallerMsiSha256)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PortableZipFileName</_Parameter1>
+      <_Parameter2>$(PortableZipFileName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PortableZipSha256</_Parameter1>
+      <_Parameter2>$(PortableZipSha256)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <Target Name="ValidatePayloadMetadata" BeforeTargets="CoreCompile">
+    <Error Condition="'$(InstallerMsiFileName)' == '' Or '$(InstallerMsiSha256)' == '' Or '$(PortableZipFileName)' == '' Or '$(PortableZipSha256)' == ''" Text="Installer payload names and SHA-256 values are required. Use installer/Build-Installer.ps1." />
+  </Target>
+</Project>

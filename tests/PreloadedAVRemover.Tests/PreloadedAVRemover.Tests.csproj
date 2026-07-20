@@ -16,5 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\PreloadedAVRemover.csproj" />
+    <ProjectReference Include="..\..\installer\Installer.Core\Installer.Core.csproj" />
   </ItemGroup>
 </Project>

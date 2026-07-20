@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>PreloadedAVRemover</AssemblyName>
-    <Version>2.2.1-rc.1</Version>
+    <Version>2.2.1-rc.2</Version>
     <FileVersion>2.2.1.0</FileVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Company>IT Health Tech LLC</Company>
@@ -24,7 +24,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
+    <Compile Remove="installer\**\*.cs" />
     <EmbeddedResource Remove="tests\**\*" />
+    <EmbeddedResource Remove="installer\**\*" />
     <None Remove="tests\**\*" />
+    <None Remove="installer\**\*" />
   </ItemGroup>
 </Project>

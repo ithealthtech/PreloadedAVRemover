@@ -1,0 +1,70 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="OEM Endpoint Cleanup"
+           Manufacturer="IT Health Tech LLC"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="A4F89198-35BD-4DAE-B600-4FCBE74D06C8"
+           Scope="perUserOrMachine"
+           Language="1033"
+           Codepage="1252">
+    <SummaryInformation Description="OEM Endpoint Cleanup $(var.ProductDisplayVersion)" Manufacturer="IT Health Tech LLC" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of OEM Endpoint Cleanup is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Property Id="ARPCOMMENTS" Value="Security-focused OEM software audit and removal utility." />
+    <Property Id="ARPHELPLINK" Value="https://github.com/ithealthtech/PreloadedAVRemover/issues" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/ithealthtech/PreloadedAVRemover" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="OEM Endpoint Cleanup is ready. Removal actions still require administrator approval when the application runs." />
+    <Icon Id="ProductIcon" SourceFile="$(var.BrandingDir)\it-health-tech.ico" />
+
+    <StandardDirectory Id="TARGETDIR">
+      <Directory Id="INSTALLFOLDER" Name="OEM Endpoint Cleanup" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProgramMenuCompanyFolder" Name="IT Health Tech">
+        <Directory Id="ProgramMenuProductFolder" Name="OEM Endpoint Cleanup" />
+      </Directory>
+    </StandardDirectory>
+
+    <SetDirectory Id="INSTALLFOLDER" Action="SetPerUserInstallFolder" Value="[LocalAppDataFolder]Programs\IT Health Tech\OEM Endpoint Cleanup" Condition="MSIINSTALLPERUSER = 1" Sequence="both" />
+    <SetDirectory Id="INSTALLFOLDER" Action="SetPerMachineInstallFolder" Value="[ProgramFiles64Folder]IT Health Tech\OEM Endpoint Cleanup" Condition="NOT MSIINSTALLPERUSER = 1" Sequence="both" />
+
+    <Component Id="ApplicationComponent" Directory="INSTALLFOLDER" Guid="C7A35C6C-207B-45DC-89B1-93334CB5656F" Bitness="always64">
+      <File Id="ApplicationExe" Source="$(var.AppSource)\PreloadedAVRemover.exe" KeyPath="yes">
+        <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuProductFolder" Name="OEM Endpoint Cleanup" WorkingDirectory="INSTALLFOLDER" Advertise="yes" />
+      </File>
+    </Component>
+    <Component Id="ReadmeComponent" Directory="INSTALLFOLDER" Guid="7D4500C2-0FD4-4AC5-BE9F-8A696569F286" Bitness="always64">
+      <File Id="ReadmeFile" Source="$(var.RepoRoot)\README.md" KeyPath="yes" />
+    </Component>
+    <Component Id="LicenseComponent" Directory="INSTALLFOLDER" Guid="78BD35E1-E3D0-4D03-A308-B0ED6AE0522A" Bitness="always64">
+      <File Id="LicenseFile" Source="$(var.RepoRoot)\LICENSE" KeyPath="yes" />
+    </Component>
+    <Component Id="NoticeComponent" Directory="INSTALLFOLDER" Guid="E46B53A8-D15D-44BB-89A0-C5AF2DB9214A" Bitness="always64">
+      <File Id="NoticeFile" Source="$(var.RepoRoot)\NOTICE" KeyPath="yes" />
+    </Component>
+    <Component Id="PolicyExampleComponent" Directory="INSTALLFOLDER" Guid="815C080D-68C3-4D38-811E-306A8AC7D3C5" Bitness="always64">
+      <File Id="PolicyExampleFile" Source="$(var.RepoRoot)\policy.example.json" KeyPath="yes" />
+    </Component>
+    <Component Id="StartMenuFolderComponent" Directory="ProgramMenuProductFolder" Guid="F6543A47-2AFB-4966-A2C5-766BE1D2E702">
+      <RemoveFolder Id="RemoveProgramMenuProductFolder" On="uninstall" />
+      <RemoveFolder Id="RemoveProgramMenuCompanyFolder" Directory="ProgramMenuCompanyFolder" On="uninstall" />
+      <RegistryValue Root="HKMU" Key="Software\IT Health Tech\OEM Endpoint Cleanup" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="Complete" Title="OEM Endpoint Cleanup" Level="1">
+      <ComponentRef Id="ApplicationComponent" />
+      <ComponentRef Id="ReadmeComponent" />
+      <ComponentRef Id="LicenseComponent" />
+      <ComponentRef Id="NoticeComponent" />
+      <ComponentRef Id="PolicyExampleComponent" />
+      <ComponentRef Id="StartMenuFolderComponent" />
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.BrandingDir)\LICENSE.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.BrandingDir)\installer-banner.png" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.BrandingDir)\installer-dialog.png" />
+  </Package>
+</Wix>

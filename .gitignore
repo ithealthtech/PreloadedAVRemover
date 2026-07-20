@@ -4,6 +4,7 @@ obj/
 **/obj/
 publish/
 publish*/
+publish-installer/
 .vs/
 *.user
 *.suo

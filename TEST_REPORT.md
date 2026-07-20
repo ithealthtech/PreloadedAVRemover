@@ -1,12 +1,12 @@
-# Test report — OEM Endpoint Cleanup 2.2.1-rc.1
+# Test report — OEM Endpoint Cleanup 2.2.1-rc.2
 
-Date: 2026-07-19  
-Target: Windows x64, .NET 8  
+Date: 2026-07-20
+Target: Windows x64, .NET 8
 Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.csproj -c Release --no-restore`
 
 ## Result
 
-- Passed: 57
+- Passed: 64
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -43,6 +43,10 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.
 - Policy loading, missing policy defaults, and malformed-policy fail-closed behavior.
 - Read-only integration inventory against the local Windows registry, WMI, AppX metadata, services, and scheduled tasks.
+- Installer-mode argument generation for per-machine and per-user MSI installs.
+- Portable package checksum validation, normal extraction, traversal rejection, and symbolic-link rejection.
+- Branded setup launcher layout self-test and adjacent MSI/ZIP payload verification.
+- WiX MSI build validation with zero warnings and zero errors.
 
 ## Remaining risks
 
