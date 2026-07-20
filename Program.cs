@@ -8,16 +8,21 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        var selfTest = args.Contains("--self-test", StringComparer.OrdinalIgnoreCase);
         ApplicationConfiguration.Initialize();
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => StartupCrashReporter.Report(e.Exception, "UI thread");
         AppDomain.CurrentDomain.UnhandledException += (_, e) => StartupCrashReporter.Report(e.ExceptionObject as Exception ?? new Exception("Unknown non-UI exception"), "AppDomain");
         try
         {
-            if (args.Contains("--self-test", StringComparer.OrdinalIgnoreCase)) { using var form = new MainForm(); form.CreateControl(); form.RunLayoutSelfTest(); return; }
+            if (selfTest) { using var form = new MainForm(); form.CreateControl(); form.RunLayoutSelfTest(); return; }
             Application.Run(new MainForm());
         }
-        catch (Exception ex) { StartupCrashReporter.Report(ex, "Startup"); }
+        catch (Exception ex)
+        {
+            StartupCrashReporter.Report(ex, selfTest ? "Self-test" : "Startup", showDialog: !selfTest);
+            if (selfTest) Environment.ExitCode = 1;
+        }
     }
 }
 
@@ -58,6 +63,7 @@ internal sealed class MainForm : Form
     private TableLayoutPanel _contentLayout = null!;
     private GradientPanel _headerPanel = null!;
     private Label _headerDetail = null!;
+    private Label _copyrightFooter = null!;
     private CleanupPolicy _config = new();
     private AuditReport? _report;
     private List<UiEntry> _entries = [];
@@ -95,10 +101,20 @@ internal sealed class MainForm : Form
         var activityTitle = new Label { Text = "TAMPER-EVIDENT ACTIVITY LOG", Dock = DockStyle.Top, Height = 34, Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(148, 163, 184), BackColor = Navy, Padding = new Padding(13, 11, 0, 0) };
         var activityCard = new Panel { Dock = DockStyle.Fill, BackColor = Navy, Padding = new Padding(14, 0, 14, 14), Margin = new Padding(0) };
         activityCard.Controls.Add(_activity); activityCard.Controls.Add(activityTitle);
+        _copyrightFooter = new Label
+        {
+            Text = "Copyright © 2026 IT Health Tech LLC",
+            Dock = DockStyle.Bottom,
+            Height = 26,
+            TextAlign = ContentAlignment.MiddleCenter,
+            BackColor = Canvas,
+            ForeColor = Slate,
+            Font = new Font("Segoe UI", 8.5f)
+        };
         _contentLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 20, 30, 26), RowCount = 3, ColumnCount = 1, BackColor = Canvas };
         _contentLayout.RowStyles.Add(_contentHeaderRow); _contentLayout.RowStyles.Add(_gridRow); _contentLayout.RowStyles.Add(_logRow);
         _contentLayout.Controls.Add(contentHeader, 0, 0); _contentLayout.Controls.Add(gridCard, 0, 1); _contentLayout.Controls.Add(activityCard, 0, 2);
-        Controls.Add(_contentLayout); Controls.Add(header);
+        Controls.Add(_contentLayout); Controls.Add(_copyrightFooter); Controls.Add(header);
 
         _scan.Click += async (_, _) => await AuditAsync();
         _run.Click += async (_, _) => await RunSelectedAsync();
@@ -165,7 +181,8 @@ internal sealed class MainForm : Form
             ClientSize = size;
             ApplyResponsiveLayout();
             PerformLayout();
-            if (_toolbar.Width <= 0 || _toolbar.Height <= 0 || _grid.Width <= 0 || _activity.Width <= 0)
+            if (_toolbar.Width <= 0 || _toolbar.Height <= 0 || _grid.Width <= 0 || _activity.Width <= 0 ||
+                _copyrightFooter.Width <= 0 || _copyrightFooter.Height <= 0 || string.IsNullOrWhiteSpace(_copyrightFooter.Text))
                 throw new InvalidOperationException($"Responsive layout failed at {size.Width}x{size.Height}.");
         }
     }
@@ -290,7 +307,7 @@ internal sealed class MainForm : Form
 internal static class StartupCrashReporter
 {
     private static int _reporting;
-    public static void Report(Exception exception, string stage)
+    public static void Report(Exception exception, string stage, bool showDialog = true)
     {
         if (Interlocked.Exchange(ref _reporting, 1) != 0) return;
         string path;
@@ -306,7 +323,10 @@ internal static class StartupCrashReporter
             path = Path.Combine(Path.GetTempPath(), "OEMEndpointCleanup-crash.log");
             try { File.WriteAllText(path, exception.ToString()); } catch { path = "Unable to write crash log"; }
         }
-        try { MessageBox.Show($"OEM Endpoint Cleanup encountered an unexpected error.{Environment.NewLine}{Environment.NewLine}Diagnostic log:{Environment.NewLine}{path}", "OEM Endpoint Cleanup", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+        if (showDialog)
+        {
+            try { MessageBox.Show($"OEM Endpoint Cleanup encountered an unexpected error.{Environment.NewLine}{Environment.NewLine}Diagnostic log:{Environment.NewLine}{path}", "OEM Endpoint Cleanup", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+        }
         Interlocked.Exchange(ref _reporting, 0);
     }
 }
