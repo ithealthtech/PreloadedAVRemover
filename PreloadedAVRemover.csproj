@@ -7,8 +7,9 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>PreloadedAVRemover</AssemblyName>
-    <Version>2.2.0</Version>
-    <FileVersion>2.2.0.0</FileVersion>
+    <Version>2.2.1-rc.1</Version>
+    <FileVersion>2.2.1.0</FileVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Company>IT Health Tech LLC</Company>
     <Authors>IT Health Tech LLC</Authors>
     <Copyright>Copyright © 2026 IT Health Tech LLC</Copyright>

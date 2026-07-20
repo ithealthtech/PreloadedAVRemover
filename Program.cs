@@ -1,7 +1,16 @@
 using PreloadedAVRemover.Core;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 
 namespace PreloadedAVRemover;
+
+public static class ProductInfo
+{
+    public static string Version { get; } =
+        Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
+        ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+        ?? "Unknown";
+}
 
 internal static class Program
 {
@@ -74,7 +83,7 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         _engine = new CleanupEngine(new WindowsInventoryProvider(), RemovalCatalog.LoadEmbedded(), new ProcessRunner());
-        Text = "OEM Endpoint Cleanup 2.2.0";
+        Text = $"OEM Endpoint Cleanup {ProductInfo.Version}";
         MinimumSize = new Size(860, 620);
         Size = new Size(1280, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -133,7 +142,7 @@ internal sealed class MainForm : Form
     {
         var mark = new ShieldMark { Size = new Size(58, 58), Margin = new Padding(0, 2, 18, 0) };
         var heading = new Label { Text = "OEM Endpoint Cleanup", Font = new Font("Segoe UI Semibold", 22), ForeColor = Color.White, AutoSize = true, Margin = new Padding(0) };
-        var version = new Label { Text = "SECURE AUDIT + REMOVAL  /  VERSION 2.2.0", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
+        var version = new Label { Text = $"SECURE AUDIT + REMOVAL  /  VERSION {ProductInfo.Version}", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
         _headerDetail = new Label { Text = "Inventory OEM software, apply policy, validate every command, and produce MSP-ready evidence.", Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
         var text = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0) };
         text.Controls.AddRange([heading, version, _headerDetail]);
@@ -316,7 +325,7 @@ internal static class StartupCrashReporter
             var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OemCleanup", "CrashLogs");
             Directory.CreateDirectory(directory);
             path = Path.Combine(directory, $"crash-{Environment.MachineName}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.log");
-            File.WriteAllText(path, $"TimestampUtc: {DateTimeOffset.UtcNow:O}{Environment.NewLine}Stage: {stage}{Environment.NewLine}Hostname: {Environment.MachineName}{Environment.NewLine}User: {Environment.UserName}{Environment.NewLine}OS: {System.Runtime.InteropServices.RuntimeInformation.OSDescription}{Environment.NewLine}Process: {Environment.ProcessPath}{Environment.NewLine}Version: 2.2.0{Environment.NewLine}{Environment.NewLine}{exception}");
+            File.WriteAllText(path, $"TimestampUtc: {DateTimeOffset.UtcNow:O}{Environment.NewLine}Stage: {stage}{Environment.NewLine}Hostname: {Environment.MachineName}{Environment.NewLine}User: {Environment.UserName}{Environment.NewLine}OS: {System.Runtime.InteropServices.RuntimeInformation.OSDescription}{Environment.NewLine}Process: {Environment.ProcessPath}{Environment.NewLine}Version: {ProductInfo.Version}{Environment.NewLine}{Environment.NewLine}{exception}");
         }
         catch
         {
