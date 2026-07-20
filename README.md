@@ -132,3 +132,5 @@ The GitHub Actions CI workflow runs formatting verification, a Release build, al
 ## License
 
 OEM Endpoint Cleanup is licensed under the [GNU General Public License v3.0](LICENSE). The project metadata uses the `GPL-3.0-only` SPDX expression.
+
+Copyright © 2026 IT Health Tech LLC. See [`NOTICE`](NOTICE) for the copyright notice and [`LICENSE`](LICENSE) for the license terms.
