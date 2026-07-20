@@ -1,0 +1,14 @@
+{
+  "profile": "Conservative",
+  "dryRun": true,
+  "force": false,
+  "allowSecurityProductRemoval": false,
+  "allowList": [
+    "Lenovo Vantage",
+    "*SupportAssist*"
+  ],
+  "blockList": [
+    "WildTangent Games"
+  ],
+  "reportDirectory": "C:\\ProgramData\\OemCleanup\\Reports"
+}
