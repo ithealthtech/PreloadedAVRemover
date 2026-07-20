@@ -1,0 +1,14 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Cultures>en-US</Cultures>
+    <OutputName>$(InstallerFileBase)</OutputName>
+    <OutputPath>$(InstallerOutput)</OutputPath>
+    <DefineConstants>AppSource=$(ApplicationSource);RepoRoot=$(RepoRoot);ProductVersion=$(ProductVersion);ProductDisplayVersion=$(ProductDisplayVersion);BrandingDir=$(BrandingDir)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+</Project>

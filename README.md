@@ -119,6 +119,34 @@ dotnet publish .\PreloadedAVRemover.csproj `
   -o .\publish
 ```
 
+### Installer package
+
+The branded setup launcher offers three modes:
+
+- **Everyone on this computer** — installs the MSI per-machine under Program Files and requests administrator approval through Windows Installer.
+- **Just me** — installs the same dual-purpose MSI per-user under Local AppData without registering it for other Windows users.
+- **Portable** — verifies and extracts the portable ZIP to a selected folder without Windows Installer registration or shortcuts.
+
+Build all three artifacts with:
+
+```powershell
+.\installer\Build-Installer.ps1 -Configuration Release
+```
+
+Outputs are written to `publish-installer\artifacts` with a `SHA256SUMS.txt` manifest. The launcher validates the adjacent MSI and portable ZIP against SHA-256 values embedded at build time before installing or extracting them.
+
+For unattended MSI deployment, use standard Windows Installer properties:
+
+```powershell
+# All users (elevated)
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""
+
+# Current user
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1
+```
+
+The MSI is built with WiX Toolset 5.0.2. WiX v6 introduced a separate Open Source Maintenance Fee; version 5.0.2 is intentionally pinned for this GPL project pending an organizational licensing decision for newer WiX releases.
+
 ## Tests
 
 ```powershell
@@ -127,7 +155,7 @@ dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.csproj -c 
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for coverage, results, and remaining risks, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the integration design.
 
-The GitHub Actions CI workflow runs formatting verification, a Release build, all tests, the non-elevated layout-only UI self-test, and a self-contained single-file publish verification. It does not create a release or deploy artifacts.
+The GitHub Actions CI workflow runs formatting verification, a Release build, all tests, the non-elevated layout-only UI self-test, a self-contained single-file publish verification, and a complete MSI/launcher/portable packaging build. It does not create a release or deploy artifacts.
 
 ## License
 

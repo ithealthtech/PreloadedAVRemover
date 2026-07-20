@@ -34,6 +34,9 @@ jobs:
         run: dotnet .\bin\Release\net8.0-windows\PreloadedAVRemover.dll --self-test
       - name: Verify portable publish
         run: dotnet publish .\PreloadedAVRemover.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\publish-ci
+      - name: Verify MSI and setup packaging
+        shell: powershell
+        run: .\installer\Build-Installer.ps1 -Configuration Release -OutputDirectory publish-installer-ci
       - name: Upload test evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
