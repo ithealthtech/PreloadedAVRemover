@@ -7,6 +7,19 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 ![Version](https://img.shields.io/badge/version-2.2.1-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
+## Download the stable release
+
+**[Download the recommended setup launcher](https://github.com/ithealthtech/PreloadedAVRemover/releases/download/v2.2.1/OEM-Endpoint-Cleanup-Setup-2.2.1-win-x64.exe)**
+
+The setup launcher offers **Everyone on this computer**, **Just me**, and **Portable** installation modes. Alternative downloads:
+
+- [MSI installer](https://github.com/ithealthtech/PreloadedAVRemover/releases/download/v2.2.1/OEM-Endpoint-Cleanup-2.2.1-win-x64.msi)
+- [Portable ZIP](https://github.com/ithealthtech/PreloadedAVRemover/releases/download/v2.2.1/OEM-Endpoint-Cleanup-2.2.1-portable-win-x64.zip)
+- [SHA-256 checksums](https://github.com/ithealthtech/PreloadedAVRemover/releases/download/v2.2.1/SHA256SUMS.txt)
+- [Release notes](https://github.com/ithealthtech/PreloadedAVRemover/releases/tag/v2.2.1)
+
+Version 2.2.1 is the current full production release, not a prerelease. The published artifacts passed the project test, packaging, checksum, and Microsoft Defender verification described below.
+
 ## Application preview
 
 ![OEM Endpoint Cleanup audit-first WinForms interface](docs/images/oem-endpoint-cleanup.png)
