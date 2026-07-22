@@ -47,6 +47,7 @@ internal sealed class SetupForm : Form
         _metadata = Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>()
             .ToDictionary(x => x.Key, x => x.Value ?? string.Empty, StringComparer.Ordinal);
         Text = "OEM Endpoint Cleanup Setup";
+        Icon = LoadAppIcon();
         ClientSize = new Size(780, 710);
         MinimumSize = new Size(720, 680);
         StartPosition = FormStartPosition.CenterScreen;
@@ -193,5 +194,13 @@ internal sealed class SetupForm : Form
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ItHealthTechLogo")
             ?? throw new InvalidOperationException("Installer logo resource is missing.");
         return new Bitmap(stream);
+    }
+
+    private static Icon LoadAppIcon()
+    {
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ItHealthTechIcon")
+            ?? throw new InvalidOperationException("Installer icon resource is missing.");
+        using var icon = new Icon(stream);
+        return (Icon)icon.Clone();
     }
 }
