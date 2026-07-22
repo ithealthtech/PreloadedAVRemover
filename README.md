@@ -4,7 +4,7 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20x64-2563eb)
 ![Framework](https://img.shields.io/badge/.NET-8.0-512bd4)
-![Version](https://img.shields.io/badge/version-2.2.1--rc.2-0f766e)
+![Version](https://img.shields.io/badge/version-2.2.1-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
 ## Application preview
@@ -35,7 +35,7 @@ Hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, dr
 5. To make changes, enable **Uninstall mode**, choose **Uninstall selected**, and approve the confirmation dialog.
 6. Review the post-execution inventory, results, exit codes, and reboot indicators in the exported report.
 
-The main grid uses friendly product and status labels. Hover over a product name to see its exact technical name and identifier; exported audit reports always retain the original values.
+The main grid uses friendly product and status labels plus a color-coded category for quick triage: **Antivirus / Security**, **OEM Control Panel**, **Hardware / Recovery**, **Trialware**, **Consumer App**, **Bloatware**, **OEM Support / Updates**, **Background Component**, or **OEM Utility**. Hover over a category for its meaning, or over a product name for its exact technical name and identifier; exported audit reports always retain the original values.
 
 Endpoint protection remains audit-only unless **Include security apps** is explicitly enabled in uninstall mode. Enabling it does not override allowlists, protected-software safeguards, manual-review catalog entries, or command validation.
 
@@ -142,10 +142,10 @@ For unattended MSI deployment, use standard Windows Installer properties:
 
 ```powershell
 # All users (elevated)
-msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""
 
 # Current user
-msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1
 ```
 
 The MSI is built with WiX Toolset 5.0.2. WiX v6 introduced a separate Open Source Maintenance Fee; version 5.0.2 is intentionally pinned for this GPL project pending an organizational licensing decision for newer WiX releases.

@@ -38,6 +38,7 @@ internal static class Program
 internal sealed record UiEntry(PlanItem Plan)
 {
     public string Name => FriendlyDisplay.ProductName(Plan.Inventory.Name);
+    public string Category => FriendlyDisplay.CategoryLabel(Plan);
     public string Brand => Plan.Catalog.Brand == "Any" ? "Various" : Plan.Catalog.Brand;
     public string Type => FriendlyDisplay.PackageTypeLabel(Plan.Inventory.PackageType);
     public string Risk => FriendlyDisplay.RiskLabel(Plan.Catalog.RiskLevel);
@@ -209,10 +210,10 @@ internal sealed class MainForm : Form
         _headerDetail.Visible = !narrow;
         _gridRow.SizeType = SizeType.Percent; _gridRow.Height = 100;
         _logRow.SizeType = SizeType.Absolute; _logRow.Height = _activityVisible ? (shortWindow ? 120 : 190) : 0;
-        _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 940;
-        _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 900;
-        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1440;
-        _grid.Columns[nameof(UiEntry.Reason)].Visible = ClientSize.Width >= 1440;
+        _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 1440;
+        _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 1060;
+        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1600;
+        _grid.Columns[nameof(UiEntry.Reason)].Visible = ClientSize.Width >= 1600;
         _contentLayout.PerformLayout();
     }
 
@@ -237,7 +238,8 @@ internal sealed class MainForm : Form
         _grid.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(248, 250, 252), ForeColor = Slate, Font = new Font("Segoe UI Semibold", 9), Padding = new Padding(8, 0, 8, 0), SelectionBackColor = Color.FromArgb(248, 250, 252), SelectionForeColor = Slate };
         _grid.DefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.White, ForeColor = Color.FromArgb(30, 41, 59), SelectionBackColor = Color.FromArgb(224, 242, 254), SelectionForeColor = Color.FromArgb(12, 74, 110), Padding = new Padding(8, 5, 8, 5) };
         _grid.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(248, 250, 252), SelectionBackColor = Color.FromArgb(224, 242, 254), SelectionForeColor = Color.FromArgb(12, 74, 110), Padding = new Padding(8, 5, 8, 5) }; _grid.RowTemplate.Height = 42;
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Name), DataPropertyName = nameof(UiEntry.Name), HeaderText = "PRODUCT", FillWeight = 29 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Name), DataPropertyName = nameof(UiEntry.Name), HeaderText = "PRODUCT", FillWeight = 31 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Category), DataPropertyName = nameof(UiEntry.Category), HeaderText = "CATEGORY", FillWeight = 19 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Brand), DataPropertyName = nameof(UiEntry.Brand), HeaderText = "BRAND", FillWeight = 12 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Type), DataPropertyName = nameof(UiEntry.Type), HeaderText = "TYPE", FillWeight = 10 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = nameof(UiEntry.Risk), DataPropertyName = nameof(UiEntry.Risk), HeaderText = "RISK", FillWeight = 11 });
@@ -348,13 +350,30 @@ internal sealed class MainForm : Form
         var property = _grid.Columns[e.ColumnIndex].DataPropertyName;
         if (property == nameof(UiEntry.Risk) && e.Value is string risk) e.CellStyle!.ForeColor = risk == "Low risk" ? Color.FromArgb(5, 150, 105) : risk == "Review first" ? Color.FromArgb(217, 119, 6) : Red;
         if (property == nameof(UiEntry.Decision) && e.Value is string decision) e.CellStyle!.ForeColor = decision == "Can uninstall" ? Red : Slate;
+        if (property == nameof(UiEntry.Category) && e.Value is string category)
+        {
+            e.CellStyle!.Font = _grid.ColumnHeadersDefaultCellStyle.Font;
+            e.CellStyle.ForeColor = category switch
+            {
+                "Antivirus / Security" => Color.FromArgb(185, 28, 28),
+                "OEM Control Panel" => Color.FromArgb(109, 40, 217),
+                "Hardware / Recovery" => Color.FromArgb(180, 83, 9),
+                "Bloatware" => Color.FromArgb(194, 65, 12),
+                "Trialware" => Color.FromArgb(161, 98, 7),
+                "Consumer App" => Color.FromArgb(8, 145, 178),
+                "OEM Support / Updates" => Color.FromArgb(29, 78, 216),
+                _ => Slate
+            };
+        }
     }
 
     private void ShowTechnicalName(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
     {
-        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != nameof(UiEntry.Name)) return;
-        if (_grid.Rows[e.RowIndex].DataBoundItem is UiEntry entry)
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Rows[e.RowIndex].DataBoundItem is not UiEntry entry) return;
+        if (_grid.Columns[e.ColumnIndex].Name == nameof(UiEntry.Name))
             e.ToolTipText = $"Technical name: {entry.Plan.Inventory.Name}{Environment.NewLine}Identifier: {entry.Plan.Inventory.Id}";
+        else if (_grid.Columns[e.ColumnIndex].Name == nameof(UiEntry.Category))
+            e.ToolTipText = FriendlyDisplay.CategoryDescription(entry.Category);
     }
 
     private static void StyleButton(Button button, Color backColor, Color foreColor, Color borderColor, int width) { button.AutoSize = false; button.Size = new Size(width, 36); button.FlatStyle = FlatStyle.Flat; button.FlatAppearance.BorderSize = 1; button.FlatAppearance.BorderColor = borderColor; button.BackColor = backColor; button.ForeColor = foreColor; button.Font = new Font("Segoe UI Semibold", 9); button.Cursor = Cursors.Hand; button.Margin = new Padding(0, 0, 10, 0); }

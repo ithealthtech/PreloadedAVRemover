@@ -23,9 +23,9 @@ internal sealed class FakeRunner : IProcessRunner
 internal static class TestData
 {
     public static DeviceIdentity Device(string manufacturer = "Dell Inc.", bool admin = true, IReadOnlyList<string>? securityProducts = null) => new("TESTPC", manufacturer, "Model X", "1.2.3", "SERIAL", "Windows", "10.0", "DOMAIN\\tech", admin, false, securityProducts ?? []);
-    public static CatalogEntry Entry(PackageType type = PackageType.Msi, RiskLevel risk = RiskLevel.Safe, bool security = false, bool automatic = true, string brand = "Any", string pattern = ".*") => new()
+    public static CatalogEntry Entry(PackageType type = PackageType.Msi, RiskLevel risk = RiskLevel.Safe, bool security = false, bool automatic = true, string brand = "Any", string pattern = ".*", string id = "test-entry") => new()
     {
-        Id = "test-entry",
+        Id = id,
         Vendor = "Test",
         Brand = brand,
         ProductPattern = pattern,

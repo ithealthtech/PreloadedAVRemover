@@ -19,4 +19,20 @@ public sealed class FriendlyDisplayTests
         Assert.Equal("Protected", FriendlyDisplay.RiskLabel(RiskLevel.ManualReview));
         Assert.Equal("Review required", FriendlyDisplay.DecisionLabel(DecisionAction.ManualReview));
     }
+
+    [Theory]
+    [InlineData("security-mcafee", true, PackageType.Exe, "Antivirus / Security")]
+    [InlineData("asus-armoury-crate", false, PackageType.Exe, "OEM Control Panel")]
+    [InlineData("hp-registration", false, PackageType.Exe, "Bloatware")]
+    [InlineData("trial-wildtangent", false, PackageType.Exe, "Trialware")]
+    [InlineData("appx-clipchamp", false, PackageType.Appx, "Consumer App")]
+    [InlineData("dell-supportassist", false, PackageType.Exe, "OEM Support / Updates")]
+    [InlineData("uncataloged-task", false, PackageType.ScheduledTask, "Background Component")]
+    [InlineData("hp-registration-task", false, PackageType.ScheduledTask, "Background Component")]
+    public void CategoryLabel_DistinguishesSoftwareTypes(string id, bool security, PackageType type, string expected)
+    {
+        var inventory = new InventoryItem("inventory", "Example", "1", "Vendor", type, "Test");
+        var catalog = TestData.Entry(type, security: security, id: id);
+        Assert.Equal(expected, FriendlyDisplay.CategoryLabel(TestData.Plan(inventory, catalog)));
+    }
 }

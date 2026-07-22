@@ -62,6 +62,35 @@ public static partial class FriendlyDisplay
         _ => "Review required"
     };
 
+    public static string CategoryLabel(PlanItem plan)
+    {
+        var id = plan.Catalog.Id;
+        if (plan.Catalog.IsSecurityProduct) return "Antivirus / Security";
+        if (ContainsAny(id, "command-center", "control-center", "armoury-crate", "msi-center", "optimizer", "settings", "synapse", "vantage")) return "OEM Control Panel";
+        if (ContainsAny(id, "recovery", "function-key", "surface-management")) return "Hardware / Recovery";
+        if (id.StartsWith("trial-", StringComparison.OrdinalIgnoreCase)) return "Trialware";
+        if (id.StartsWith("appx-", StringComparison.OrdinalIgnoreCase)) return "Consumer App";
+        if (plan.Inventory.PackageType is PackageType.Service or PackageType.ScheduledTask) return "Background Component";
+        if (ContainsAny(id, "registration", "welcome", "jumpstart", "jumpstarts", "giftbox", "promotion", "collection", "digital-delivery", "customer-connect", "app-explorer", "bonus-apps", "axon", "cortex")) return "Bloatware";
+        if (ContainsAny(id, "support", "update", "deskupdate", "service-station", "care-center", "driver-utility", "smart-assistant", "myasus")) return "OEM Support / Updates";
+        return "OEM Utility";
+    }
+
+    public static string CategoryDescription(string category) => category switch
+    {
+        "Antivirus / Security" => "Bundled antivirus, endpoint security, or browser-security software.",
+        "OEM Control Panel" => "Manufacturer software that can expose device, performance, lighting, or battery controls.",
+        "Hardware / Recovery" => "Software tied to hotkeys, recovery, firmware, or hardware management; protected by default.",
+        "Trialware" => "Time-limited or promotional third-party software bundled with the device.",
+        "Consumer App" => "Optional consumer application delivered through Windows or the Microsoft Store.",
+        "Bloatware" => "Promotional, registration, onboarding, game, or marketing software not required for core operation.",
+        "OEM Support / Updates" => "Manufacturer support, diagnostics, warranty, driver, or update tooling.",
+        "Background Component" => "A service or scheduled component detected for audit and manual review.",
+        _ => "Optional manufacturer utility that does not fit another category."
+    };
+
+    private static bool ContainsAny(string value, params string[] tokens) => tokens.Any(token => value.Contains(token, StringComparison.OrdinalIgnoreCase));
+
     [GeneratedRegex(@"\s+-\s+[a-z]{2}-[a-z]{2}$", RegexOptions.IgnoreCase)]
     private static partial Regex LocaleSuffix();
 

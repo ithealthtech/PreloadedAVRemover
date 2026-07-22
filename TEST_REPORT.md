@@ -1,4 +1,4 @@
-# Test report — OEM Endpoint Cleanup 2.2.1-rc.2
+# Test report — OEM Endpoint Cleanup 2.2.1
 
 Date: 2026-07-22
 Target: Windows x64, .NET 8
@@ -6,7 +6,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 
 ## Result
 
-- Passed: 71
+- Passed: 79
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -44,6 +44,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Hash-chain linkage, hostname context, and whole-file SHA-256 generation.
 - JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.
 - Friendly application-name cleanup, locale removal, AppX aliases, and operator-facing package/risk/decision labels.
+- Deterministic category classification for security, OEM control panels, hardware/recovery tools, trialware, consumer apps, promotional bloatware, OEM support/update tools, and background components.
 - Policy loading, missing policy defaults, and malformed-policy fail-closed behavior.
 - Read-only integration inventory against the local Windows registry, WMI, AppX metadata, services, and scheduled tasks.
 - Installer-mode argument generation for per-machine and per-user MSI installs.
