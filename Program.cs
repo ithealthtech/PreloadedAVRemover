@@ -37,12 +37,12 @@ internal static class Program
 
 internal sealed record UiEntry(PlanItem Plan)
 {
-    public string Name => Plan.Inventory.Name;
-    public string Brand => Plan.Catalog.Brand;
-    public string Type => Plan.Inventory.PackageType.ToString();
-    public string Risk => Plan.Catalog.RiskLevel.ToString();
+    public string Name => FriendlyDisplay.ProductName(Plan.Inventory.Name);
+    public string Brand => Plan.Catalog.Brand == "Any" ? "Various" : Plan.Catalog.Brand;
+    public string Type => FriendlyDisplay.PackageTypeLabel(Plan.Inventory.PackageType);
+    public string Risk => FriendlyDisplay.RiskLabel(Plan.Catalog.RiskLevel);
     public string Confidence => $"{Plan.MatchConfidence}%";
-    public string Decision => Plan.Decision.Action.ToString();
+    public string Decision => FriendlyDisplay.DecisionLabel(Plan.Decision.Action);
     public string Reason => Plan.Decision.Reason;
 }
 
@@ -137,6 +137,7 @@ internal sealed class MainForm : Form
         _profile.SelectedIndexChanged += async (_, _) => { if (Visible) await AuditAsync(); };
         _grid.SelectionChanged += (_, _) => UpdateRunButton();
         _grid.CellFormatting += FormatCell;
+        _grid.CellToolTipTextNeeded += ShowTechnicalName;
         Resize += (_, _) => ApplyResponsiveLayout();
         ApplyResponsiveLayout();
         Shown += async (_, _) => await AuditAsync();
@@ -210,7 +211,7 @@ internal sealed class MainForm : Form
         _logRow.SizeType = SizeType.Absolute; _logRow.Height = _activityVisible ? (shortWindow ? 120 : 190) : 0;
         _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 940;
         _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 900;
-        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1120;
+        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1440;
         _grid.Columns[nameof(UiEntry.Reason)].Visible = ClientSize.Width >= 1440;
         _contentLayout.PerformLayout();
     }
@@ -345,8 +346,15 @@ internal sealed class MainForm : Form
     private void FormatCell(object? sender, DataGridViewCellFormattingEventArgs e)
     {
         var property = _grid.Columns[e.ColumnIndex].DataPropertyName;
-        if (property == nameof(UiEntry.Risk) && e.Value is string risk) e.CellStyle!.ForeColor = risk == nameof(RiskLevel.Safe) ? Color.FromArgb(5, 150, 105) : risk == nameof(RiskLevel.Caution) ? Color.FromArgb(217, 119, 6) : Red;
-        if (property == nameof(UiEntry.Decision) && e.Value is string decision) e.CellStyle!.ForeColor = decision == nameof(DecisionAction.Remove) ? Red : Slate;
+        if (property == nameof(UiEntry.Risk) && e.Value is string risk) e.CellStyle!.ForeColor = risk == "Low risk" ? Color.FromArgb(5, 150, 105) : risk == "Review first" ? Color.FromArgb(217, 119, 6) : Red;
+        if (property == nameof(UiEntry.Decision) && e.Value is string decision) e.CellStyle!.ForeColor = decision == "Can uninstall" ? Red : Slate;
+    }
+
+    private void ShowTechnicalName(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != nameof(UiEntry.Name)) return;
+        if (_grid.Rows[e.RowIndex].DataBoundItem is UiEntry entry)
+            e.ToolTipText = $"Technical name: {entry.Plan.Inventory.Name}{Environment.NewLine}Identifier: {entry.Plan.Inventory.Id}";
     }
 
     private static void StyleButton(Button button, Color backColor, Color foreColor, Color borderColor, int width) { button.AutoSize = false; button.Size = new Size(width, 36); button.FlatStyle = FlatStyle.Flat; button.FlatAppearance.BorderSize = 1; button.FlatAppearance.BorderColor = borderColor; button.BackColor = backColor; button.ForeColor = foreColor; button.Font = new Font("Segoe UI Semibold", 9); button.Cursor = Cursors.Hand; button.Margin = new Padding(0, 0, 10, 0); }
