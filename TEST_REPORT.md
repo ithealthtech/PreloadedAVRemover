@@ -1,4 +1,4 @@
-# Test report — OEM Endpoint Cleanup 2.2.1-rc.2
+# Test report — OEM Endpoint Cleanup 2.2.1
 
 Date: 2026-07-22
 Target: Windows x64, .NET 8

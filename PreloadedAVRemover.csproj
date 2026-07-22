@@ -8,7 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\it-health-tech.ico</ApplicationIcon>
     <AssemblyName>PreloadedAVRemover</AssemblyName>
-    <Version>2.2.1-rc.2</Version>
+    <Version>2.2.1</Version>
     <FileVersion>2.2.1.0</FileVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Company>IT Health Tech LLC</Company>

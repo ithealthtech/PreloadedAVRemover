@@ -4,7 +4,7 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20x64-2563eb)
 ![Framework](https://img.shields.io/badge/.NET-8.0-512bd4)
-![Version](https://img.shields.io/badge/version-2.2.1--rc.2-0f766e)
+![Version](https://img.shields.io/badge/version-2.2.1-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
 ## Application preview
@@ -142,10 +142,10 @@ For unattended MSI deployment, use standard Windows Installer properties:
 
 ```powershell
 # All users (elevated)
-msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""
 
 # Current user
-msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-rc.2-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1
+msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1
 ```
 
 The MSI is built with WiX Toolset 5.0.2. WiX v6 introduced a separate Open Source Maintenance Fee; version 5.0.2 is intentionally pinned for this GPL project pending an organizational licensing decision for newer WiX releases.
