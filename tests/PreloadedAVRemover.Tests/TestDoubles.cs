@@ -13,10 +13,11 @@ internal sealed class MockInventoryProvider : IInventoryProvider
 internal sealed class FakeRunner : IProcessRunner
 {
     public int ExitCode { get; set; }
+    public string? DiagnosticOutput { get; set; }
     public Exception? Exception { get; set; }
     public int Calls { get; private set; }
     public ValidatedCommand? LastCommand { get; private set; }
-    public Task<int> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default) { Calls++; LastCommand = command; return Exception is null ? Task.FromResult(ExitCode) : Task.FromException<int>(Exception); }
+    public Task<ProcessRunResult> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default) { Calls++; LastCommand = command; return Exception is null ? Task.FromResult(new ProcessRunResult(ExitCode, DiagnosticOutput)) : Task.FromException<ProcessRunResult>(Exception); }
 }
 
 internal static class TestData

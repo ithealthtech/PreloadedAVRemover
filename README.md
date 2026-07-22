@@ -4,7 +4,7 @@ A security-focused Windows utility for inventorying, auditing, and optionally re
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20x64-2563eb)
 ![Framework](https://img.shields.io/badge/.NET-8.0-512bd4)
-![Version](https://img.shields.io/badge/version-2.2.1--rc.1-0f766e)
+![Version](https://img.shields.io/badge/version-2.2.1--rc.2-0f766e)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
 ## Application preview
@@ -31,11 +31,11 @@ Hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, dr
 1. Start `PreloadedAVRemover.exe` and approve UAC.
 2. Review the automatic audit. JSON and HTML reports are written immediately.
 3. Select a policy profile and one or more rows whose decision is **Remove**.
-4. Leave **Execute removals** unchecked to validate the plan without changing the device.
-5. To make changes, enable **Execute removals**, select the intended rows, and approve the confirmation dialog.
+4. Leave **Uninstall mode** unchecked and choose **Preview selected** to validate the plan without changing the device.
+5. To make changes, enable **Uninstall mode**, choose **Uninstall selected**, and approve the confirmation dialog.
 6. Review the post-execution inventory, results, exit codes, and reboot indicators in the exported report.
 
-Endpoint protection remains audit-only unless **Allow AV removal** is explicitly enabled. Enabling it does not override allowlists, protected-software safeguards, manual-review catalog entries, or command validation.
+Endpoint protection remains audit-only unless **Include security apps** is explicitly enabled in uninstall mode. Enabling it does not override allowlists, protected-software safeguards, manual-review catalog entries, or command validation.
 
 ## Policy profiles
 
@@ -94,7 +94,8 @@ Reports include hostname, user context, local-admin status, Windows version, man
 - Environment-expanded and network-hosted registry executable paths are rejected.
 - Shells and script hosts from registry commands are rejected.
 - MSI removal is rebuilt as `msiexec /x {ProductCode} /qn /norestart` from a validated GUID.
-- AppX and winget use fixed handlers with validated package identifiers.
+- AppX and winget use fixed handlers with validated package identifiers. AppX removal passes the package name as a separate script-block argument and uses Windows' all-users package-removal API.
+- Captured uninstaller output is included in failed results so reports show the vendor or Windows deployment error instead of only an exit code.
 - Services, scheduled tasks, and registry artifacts are detected and audited but fail closed unless a dedicated catalog handler is implemented.
 - No arbitrary file or registry deletion is performed.
 - Non-admin removal attempts fail without starting a process.

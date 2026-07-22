@@ -66,7 +66,8 @@ public static class CommandValidator
         var package = item.PackageFullName;
         if (string.IsNullOrWhiteSpace(package) || !Regex.IsMatch(package, @"^[A-Za-z0-9._-]+$")) return new(false, "AppX package full name is malformed");
         var powerShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
-        return new(true, "Validated fixed AppX handler", new(powerShell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "Remove-AppxPackage -AllUsers -Package $args[0] -ErrorAction Stop", package], false, "Fixed AppX handler", timeoutSeconds));
+        const string script = "& { param([string]$package) $ErrorActionPreference='Stop'; Remove-AppxPackage -AllUsers -Package $package -ErrorAction Stop } @args";
+        return new(true, "Validated fixed all-users AppX handler", new(powerShell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script, package], false, "Fixed AppX handler", timeoutSeconds));
     }
 
     private static ValidationResult ValidateWinget(InventoryItem item, int timeoutSeconds)
@@ -77,15 +78,25 @@ public static class CommandValidator
     }
 }
 
-public interface IProcessRunner { Task<int> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default); }
+public sealed record ProcessRunResult(int ExitCode, string? DiagnosticOutput = null);
+public interface IProcessRunner { Task<ProcessRunResult> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default); }
 public sealed class ProcessTimeoutException(string message) : TimeoutException(message);
 public sealed class ProcessRunner : IProcessRunner
 {
-    public async Task<int> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default)
+    public async Task<ProcessRunResult> RunAsync(ValidatedCommand command, CancellationToken cancellationToken = default)
     {
-        var start = new ProcessStartInfo(command.FileName) { UseShellExecute = false, CreateNoWindow = !command.Interactive };
+        var captureOutput = !command.Interactive;
+        var start = new ProcessStartInfo(command.FileName)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = captureOutput,
+            RedirectStandardOutput = captureOutput,
+            RedirectStandardError = captureOutput
+        };
         foreach (var argument in command.Arguments) start.ArgumentList.Add(argument);
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Unable to start validated uninstaller.");
+        var outputTask = captureOutput ? process.StandardOutput.ReadToEndAsync(cancellationToken) : Task.FromResult(string.Empty);
+        var errorTask = captureOutput ? process.StandardError.ReadToEndAsync(cancellationToken) : Task.FromResult(string.Empty);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(command.TimeoutSeconds));
         try { await process.WaitForExitAsync(timeout.Token); }
@@ -94,7 +105,9 @@ public sealed class ProcessRunner : IProcessRunner
             try { process.Kill(true); await process.WaitForExitAsync(CancellationToken.None); } catch { }
             throw new ProcessTimeoutException($"Validated uninstaller exceeded the {command.TimeoutSeconds}-second timeout.");
         }
-        return process.ExitCode;
+        var diagnostic = string.Join(Environment.NewLine, new[] { await errorTask, await outputTask }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+        if (diagnostic.Length > 1200) diagnostic = diagnostic[..1200] + "…";
+        return new(process.ExitCode, string.IsNullOrWhiteSpace(diagnostic) ? null : diagnostic);
     }
 }
 

@@ -53,12 +53,13 @@ internal sealed class MainForm : Form
     private static readonly Color Canvas = Color.FromArgb(241, 245, 249);
     private static readonly Color Red = Color.FromArgb(220, 38, 38);
 
-    private readonly CheckBox _execute = new() { Text = "Execute removals", AutoSize = true };
-    private readonly CheckBox _allowSecurity = new() { Text = "Allow AV removal", AutoSize = true };
+    private readonly CheckBox _execute = new() { Text = "Uninstall mode", AutoSize = true };
+    private readonly CheckBox _allowSecurity = new() { Text = "Include security apps", AutoSize = true };
     private readonly ComboBox _profile = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 118 };
     private readonly Button _scan = new() { Text = "Audit again" };
-    private readonly Button _run = new() { Text = "Run dry-run", Enabled = false };
+    private readonly Button _run = new() { Text = "Preview selected", Enabled = false };
     private readonly Button _export = new() { Text = "Export report", Enabled = false };
+    private readonly Button _toggleLog = new() { Text = "Show activity" };
     private readonly Label _summary = new() { AutoSize = true, Text = "Ready to audit", Font = new Font("Segoe UI Semibold", 11), ForeColor = Color.FromArgb(30, 41, 59) };
     private readonly Label _resultCount = new() { AutoSize = true, Text = "Dry-run is enabled by default", ForeColor = Slate, Margin = new Padding(0, 4, 0, 0) };
     private readonly DataGridView _grid = new();
@@ -79,6 +80,7 @@ internal sealed class MainForm : Form
     private string? _jsonReportPath;
     private string? _htmlReportPath;
     private bool _hasExecuted;
+    private bool _activityVisible;
 
     public MainForm()
     {
@@ -98,8 +100,9 @@ internal sealed class MainForm : Form
         _execute.Checked = !_config.DryRun;
         _allowSecurity.Checked = _config.AllowSecurityProductRemoval;
         StyleButton(_scan, Color.White, Color.FromArgb(30, 41, 59), Color.FromArgb(203, 213, 225), 108);
-        StyleButton(_run, Red, Color.White, Red, 148);
+        StyleButton(_run, Color.FromArgb(2, 132, 199), Color.White, Color.FromArgb(2, 132, 199), 148);
         StyleButton(_export, Color.White, Color.FromArgb(30, 41, 59), Color.FromArgb(203, 213, 225), 118);
+        StyleButton(_toggleLog, Color.White, Color.FromArgb(30, 41, 59), Color.FromArgb(203, 213, 225), 116);
         foreach (var check in new[] { _execute, _allowSecurity }) { check.ForeColor = Slate; check.Margin = new Padding(8, 8, 0, 0); }
 
         var header = BuildHeader();
@@ -120,7 +123,8 @@ internal sealed class MainForm : Form
             ForeColor = Slate,
             Font = new Font("Segoe UI", 8.5f)
         };
-        _contentLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 20, 30, 26), RowCount = 3, ColumnCount = 1, BackColor = Canvas };
+        _logRow.SizeType = SizeType.Absolute; _logRow.Height = 0;
+        _contentLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 18, 30, 20), RowCount = 3, ColumnCount = 1, BackColor = Canvas };
         _contentLayout.RowStyles.Add(_contentHeaderRow); _contentLayout.RowStyles.Add(_gridRow); _contentLayout.RowStyles.Add(_logRow);
         _contentLayout.Controls.Add(contentHeader, 0, 0); _contentLayout.Controls.Add(gridCard, 0, 1); _contentLayout.Controls.Add(activityCard, 0, 2);
         Controls.Add(_contentLayout); Controls.Add(_copyrightFooter); Controls.Add(header);
@@ -128,7 +132,15 @@ internal sealed class MainForm : Form
         _scan.Click += async (_, _) => await AuditAsync();
         _run.Click += async (_, _) => await RunSelectedAsync();
         _export.Click += (_, _) => ShowReportLocation();
-        _execute.CheckedChanged += (_, _) => { _run.Text = _execute.Checked ? "Execute selected" : "Run dry-run"; UpdateRunButton(); };
+        _execute.CheckedChanged += (_, _) =>
+        {
+            _run.Text = _execute.Checked ? "Uninstall selected" : "Preview selected";
+            _run.BackColor = _execute.Checked ? Red : Color.FromArgb(2, 132, 199);
+            _run.FlatAppearance.BorderColor = _run.BackColor;
+            _allowSecurity.Visible = _execute.Checked;
+            UpdateRunButton();
+        };
+        _toggleLog.Click += (_, _) => ToggleActivity();
         _allowSecurity.CheckedChanged += async (_, _) => await AuditAsync();
         _profile.SelectedIndexChanged += async (_, _) => { if (Visible) await AuditAsync(); };
         _grid.SelectionChanged += (_, _) => UpdateRunButton();
@@ -140,15 +152,15 @@ internal sealed class MainForm : Form
 
     private Control BuildHeader()
     {
-        var mark = new ShieldMark { Size = new Size(58, 58), Margin = new Padding(0, 2, 18, 0) };
-        var heading = new Label { Text = "OEM Endpoint Cleanup", Font = new Font("Segoe UI Semibold", 22), ForeColor = Color.White, AutoSize = true, Margin = new Padding(0) };
+        var mark = new ShieldMark { Size = new Size(44, 44), Margin = new Padding(0, 1, 14, 0) };
+        var heading = new Label { Text = "OEM Endpoint Cleanup", Font = new Font("Segoe UI Semibold", 19), ForeColor = Color.White, AutoSize = true, Margin = new Padding(0) };
         var version = new Label { Text = $"SECURE AUDIT + REMOVAL  /  VERSION {ProductInfo.Version}", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
-        _headerDetail = new Label { Text = "Inventory OEM software, apply policy, validate every command, and produce MSP-ready evidence.", Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
+        _headerDetail = new Label { Text = "Audit first. Uninstall only what policy approves.", Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(2, 5, 0, 0) };
         var text = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0) };
         text.Controls.AddRange([heading, version, _headerDetail]);
-        var inner = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Color.Transparent, Padding = new Padding(30, 23, 30, 18) };
+        var inner = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Color.Transparent, Padding = new Padding(30, 17, 30, 12) };
         inner.Controls.AddRange([mark, text]);
-        _headerPanel = new GradientPanel { Dock = DockStyle.Top, Height = 132 }; _headerPanel.Controls.Add(inner); _headerPanel.Controls.Add(_progress); return _headerPanel;
+        _headerPanel = new GradientPanel { Dock = DockStyle.Top, Height = 104 }; _headerPanel.Controls.Add(inner); _headerPanel.Controls.Add(_progress); return _headerPanel;
     }
 
     private Control BuildContentHeader()
@@ -156,11 +168,11 @@ internal sealed class MainForm : Form
         var status = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(0) };
         status.Controls.AddRange([_summary, _resultCount]);
         var profileLabel = new Label { Text = "Policy", AutoSize = true, ForeColor = Slate, Margin = new Padding(0, 8, 6, 0) };
-        var protectedBadge = new Label { Text = "PROTECTED SOFTWARE GUARDED", AutoSize = true, BackColor = Color.FromArgb(220, 252, 231), ForeColor = Color.FromArgb(22, 101, 52), Font = new Font("Segoe UI Semibold", 8), Padding = new Padding(9, 7, 9, 7), Margin = new Padding(12, 3, 0, 0) };
         _toolbar = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = false, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 6, 0, 0) };
-        _toolbar.Controls.AddRange([profileLabel, _profile, _scan, _run, _export, _execute, _allowSecurity]);
+        _allowSecurity.Visible = _execute.Checked;
+        _toolbar.Controls.AddRange([profileLabel, _profile, _scan, _run, _export, _toggleLog, _execute, _allowSecurity]);
         var summaryRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
-        summaryRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); summaryRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); summaryRow.Controls.Add(status, 0, 0); summaryRow.Controls.Add(protectedBadge, 1, 0);
+        summaryRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); summaryRow.Controls.Add(status, 0, 0);
         var result = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0), AutoSize = false };
         result.RowStyles.Add(new RowStyle(SizeType.Absolute, 43)); result.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); result.Controls.Add(summaryRow, 0, 0); result.Controls.Add(_toolbar, 0, 1); return result;
     }
@@ -170,16 +182,17 @@ internal sealed class MainForm : Form
         if (_contentLayout is null || _toolbar is null || _headerPanel is null) return;
         var narrow = ClientSize.Width < 1080;
         var shortWindow = ClientSize.Height < 720;
-        _contentLayout.Padding = narrow ? new Padding(18, 14, 18, 18) : new Padding(30, 20, 30, 26);
-        _contentHeaderRow.Height = narrow ? 132 : 96;
+        _contentLayout.Padding = narrow ? new Padding(18, 12, 18, 16) : new Padding(30, 18, 30, 20);
+        _contentHeaderRow.Height = narrow ? 126 : 90;
         _toolbar.WrapContents = narrow;
-        _headerPanel.Height = narrow ? 116 : 132;
+        _headerPanel.Height = narrow ? 96 : 104;
         _headerDetail.Visible = !narrow;
-        _gridRow.Height = shortWindow ? 74 : 66;
-        _logRow.Height = shortWindow ? 26 : 34;
+        _gridRow.SizeType = SizeType.Percent; _gridRow.Height = 100;
+        _logRow.SizeType = SizeType.Absolute; _logRow.Height = _activityVisible ? (shortWindow ? 120 : 190) : 0;
         _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 940;
         _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 900;
         _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1120;
+        _grid.Columns[nameof(UiEntry.Reason)].Visible = ClientSize.Width >= 1440;
         _contentLayout.PerformLayout();
     }
 
@@ -300,6 +313,13 @@ internal sealed class MainForm : Form
     private static string ReportDirectory(CleanupPolicy p) => string.IsNullOrWhiteSpace(p.ReportDirectory) ? PolicyConfiguration.DefaultReportDirectory() : p.ReportDirectory;
     private void ShowReportLocation() => MessageBox.Show($"JSON:{Environment.NewLine}{_jsonReportPath}{Environment.NewLine}{Environment.NewLine}HTML:{Environment.NewLine}{_htmlReportPath}", "Audit reports", MessageBoxButtons.OK, MessageBoxIcon.Information);
     private void Log(string message) => _activity.AppendText($"{DateTime.Now:HH:mm:ss}  {message}{Environment.NewLine}");
+
+    private void ToggleActivity()
+    {
+        _activityVisible = !_activityVisible;
+        _toggleLog.Text = _activityVisible ? "Hide activity" : "Show activity";
+        ApplyResponsiveLayout();
+    }
 
     private void SetBusy(bool busy) { UseWaitCursor = busy; _progress.Visible = busy; _scan.Enabled = !busy; _profile.Enabled = !busy; _execute.Enabled = !busy; _allowSecurity.Enabled = !busy; if (busy) _run.Enabled = false; else UpdateRunButton(); }
     private void UpdateRunButton() { var has = _grid.SelectedRows.Cast<DataGridViewRow>().Any(r => r.DataBoundItem is UiEntry x && x.Plan.Decision.Action == DecisionAction.Remove); _run.Enabled = !UseWaitCursor && !_hasExecuted && has; }
