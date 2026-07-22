@@ -94,7 +94,7 @@ Reports include hostname, user context, local-admin status, Windows version, man
 - Environment-expanded and network-hosted registry executable paths are rejected.
 - Shells and script hosts from registry commands are rejected.
 - MSI removal is rebuilt as `msiexec /x {ProductCode} /qn /norestart` from a validated GUID.
-- AppX and winget use fixed handlers with validated package identifiers. AppX removal targets each registered user explicitly and passes the package name as a separate argument.
+- AppX and winget use fixed handlers with validated package identifiers. AppX removal passes the package name as a separate script-block argument and uses Windows' all-users package-removal API.
 - Captured uninstaller output is included in failed results so reports show the vendor or Windows deployment error instead of only an exit code.
 - Services, scheduled tasks, and registry artifacts are detected and audited but fail closed unless a dedicated catalog handler is implemented.
 - No arbitrary file or registry deletion is performed.

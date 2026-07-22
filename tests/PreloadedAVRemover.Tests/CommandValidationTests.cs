@@ -68,7 +68,8 @@ public sealed class CommandValidationTests
         var bad = good with { PackageFullName = "bad'; Remove-Item C:\\; '" };
         var result = CommandValidator.Validate(TestData.Plan(good, TestData.Entry(PackageType.Appx)));
         Assert.True(result.IsValid);
-        Assert.Contains("-User", result.Command!.Arguments[^2], StringComparison.Ordinal);
+        Assert.Contains("-AllUsers", result.Command!.Arguments[^2], StringComparison.Ordinal);
+        Assert.DoesNotContain("UserSecurityId", result.Command.Arguments[^2], StringComparison.Ordinal);
         Assert.Contains("@args", result.Command.Arguments[^2], StringComparison.Ordinal);
         Assert.Equal(good.PackageFullName, result.Command.Arguments[^1]);
         Assert.DoesNotContain(good.PackageFullName!, result.Command.Arguments[^2], StringComparison.Ordinal);

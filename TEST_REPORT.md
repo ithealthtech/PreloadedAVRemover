@@ -31,7 +31,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Malformed, relative, missing, control-character, shell-host, and script-host uninstall commands fail closed.
 - Environment-expanded registry paths are rejected and command timeouts are clamped to 30–3600 seconds.
 - Valid and malicious AppX package identifiers.
-- AppX package arguments are passed separately through a fixed script-block parameter, and registered users are removed explicitly.
+- AppX package arguments are passed separately through a fixed script-block parameter to the all-users removal API; unvalidated SID structures are never forwarded.
 - Unavailable winget behavior.
 - Service, scheduled-task, and registry backends fail closed without dedicated handlers.
 - Mock inventory matching for every package type.

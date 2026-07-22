@@ -66,8 +66,8 @@ public static class CommandValidator
         var package = item.PackageFullName;
         if (string.IsNullOrWhiteSpace(package) || !Regex.IsMatch(package, @"^[A-Za-z0-9._-]+$")) return new(false, "AppX package full name is malformed");
         var powerShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
-        const string script = "& { param([string]$package) $ErrorActionPreference='Stop'; $matches=@(Get-AppxPackage -AllUsers | Where-Object PackageFullName -EQ $package); foreach($pkg in $matches){ $users=@($pkg.PackageUserInformation | Where-Object InstallState -EQ 'Installed'); foreach($user in $users){ Remove-AppxPackage -Package $pkg.PackageFullName -User $user.UserSecurityId -ErrorAction Stop } } } @args";
-        return new(true, "Validated fixed per-user AppX handler", new(powerShell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script, package], false, "Fixed AppX handler", timeoutSeconds));
+        const string script = "& { param([string]$package) $ErrorActionPreference='Stop'; Remove-AppxPackage -AllUsers -Package $package -ErrorAction Stop } @args";
+        return new(true, "Validated fixed all-users AppX handler", new(powerShell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script, package], false, "Fixed AppX handler", timeoutSeconds));
     }
 
     private static ValidationResult ValidateWinget(InventoryItem item, int timeoutSeconds)
