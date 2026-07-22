@@ -1,12 +1,12 @@
 # Test report — OEM Endpoint Cleanup 2.2.1-rc.2
 
-Date: 2026-07-20
+Date: 2026-07-22
 Target: Windows x64, .NET 8
 Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.csproj -c Release --no-restore`
 
 ## Result
 
-- Passed: 64
+- Passed: 65
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -31,6 +31,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Malformed, relative, missing, control-character, shell-host, and script-host uninstall commands fail closed.
 - Environment-expanded registry paths are rejected and command timeouts are clamped to 30–3600 seconds.
 - Valid and malicious AppX package identifiers.
+- AppX package arguments are passed separately through a fixed script-block parameter, and registered users are removed explicitly.
 - Unavailable winget behavior.
 - Service, scheduled-task, and registry backends fail closed without dedicated handlers.
 - Mock inventory matching for every package type.
@@ -38,6 +39,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Non-admin removal fails without invoking the process runner.
 - Success, failure (`1603`), reboot-required (`3010`), and initiated-reboot (`1641`) exit paths.
 - Process timeouts are captured as a distinct auditable outcome.
+- Failed uninstallers preserve bounded diagnostic output in the execution result and report.
 - Empty inventory/missing-source behavior.
 - Hash-chain linkage, hostname context, and whole-file SHA-256 generation.
 - JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.

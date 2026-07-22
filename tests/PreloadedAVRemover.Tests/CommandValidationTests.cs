@@ -66,7 +66,12 @@ public sealed class CommandValidationTests
     {
         var good = new InventoryItem("app", "Clipchamp", "1", "Microsoft", PackageType.Appx, "AppX", PackageFullName: "Clipchamp.Clipchamp_1.2.3_x64__abc");
         var bad = good with { PackageFullName = "bad'; Remove-Item C:\\; '" };
-        Assert.True(CommandValidator.Validate(TestData.Plan(good, TestData.Entry(PackageType.Appx))).IsValid);
+        var result = CommandValidator.Validate(TestData.Plan(good, TestData.Entry(PackageType.Appx)));
+        Assert.True(result.IsValid);
+        Assert.Contains("-User", result.Command!.Arguments[^2], StringComparison.Ordinal);
+        Assert.Contains("@args", result.Command.Arguments[^2], StringComparison.Ordinal);
+        Assert.Equal(good.PackageFullName, result.Command.Arguments[^1]);
+        Assert.DoesNotContain(good.PackageFullName!, result.Command.Arguments[^2], StringComparison.Ordinal);
         Assert.False(CommandValidator.Validate(TestData.Plan(bad, TestData.Entry(PackageType.Appx))).IsValid);
     }
 

@@ -58,10 +58,14 @@ public sealed class CleanupEngine
                     try
                     {
                         log.Write(executionId, "Command", "Executing validated command", new { validation.Command.FileName, validation.Command.Arguments, validation.Command.Source, validation.Command.TimeoutSeconds });
-                        var exitCode = await _runner.RunAsync(validation.Command, cancellationToken);
+                        var processResult = await _runner.RunAsync(validation.Command, cancellationToken);
+                        var exitCode = processResult.ExitCode;
                         var reboot = exitCode is 3010 or 1641 || item.Catalog.RebootRequired;
                         var outcome = exitCode is 0 or 3010 or 1641 ? (reboot ? ExecutionOutcome.RebootRequired : ExecutionOutcome.Removed) : ExecutionOutcome.Failed;
-                        result = new(item, outcome, exitCode, outcome == ExecutionOutcome.Failed ? "Uninstaller returned a failure exit code" : "Validated uninstaller completed", reboot, DateTimeOffset.UtcNow);
+                        var message = outcome == ExecutionOutcome.Failed
+                            ? "Uninstaller returned a failure exit code" + (string.IsNullOrWhiteSpace(processResult.DiagnosticOutput) ? string.Empty : $": {processResult.DiagnosticOutput}")
+                            : "Validated uninstaller completed";
+                        result = new(item, outcome, exitCode, message, reboot, DateTimeOffset.UtcNow);
                     }
                     catch (ProcessTimeoutException ex) { result = new(item, ExecutionOutcome.TimedOut, null, ex.Message, false, DateTimeOffset.UtcNow); }
                     catch (Exception ex) { result = new(item, ExecutionOutcome.Failed, null, ex.Message, false, DateTimeOffset.UtcNow); }

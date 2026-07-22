@@ -41,6 +41,17 @@ public sealed class EngineAuditReportTests
     }
 
     [Fact]
+    public async Task FailedUninstaller_DiagnosticOutputIsReported()
+    {
+        var provider = new MockInventoryProvider { Device = TestData.Device(admin: true), Items = [TestData.Msi()] };
+        var runner = new FakeRunner { ExitCode = 1, DiagnosticOutput = "AppX deployment failed with 0x80073CFA" };
+        var engine = new CleanupEngine(provider, new RemovalCatalog([TestData.Entry()]), runner);
+        var result = Assert.Single(await engine.ExecuteAsync(engine.Rescan(new CleanupPolicy()), new CleanupPolicy { DryRun = false }, "id", Path.Combine(TestData.TempDirectory(), "audit.jsonl")));
+        Assert.Equal(ExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("0x80073CFA", result.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ProcessTimeout_IsReportedDistinctly()
     {
         var provider = new MockInventoryProvider { Items = [TestData.Msi()] };
