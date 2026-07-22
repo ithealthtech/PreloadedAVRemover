@@ -6,7 +6,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 
 ## Result
 
-- Passed: 65
+- Passed: 71
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -43,6 +43,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Empty inventory/missing-source behavior.
 - Hash-chain linkage, hostname context, and whole-file SHA-256 generation.
 - JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.
+- Friendly application-name cleanup, locale removal, AppX aliases, and operator-facing package/risk/decision labels.
 - Policy loading, missing policy defaults, and malformed-policy fail-closed behavior.
 - Read-only integration inventory against the local Windows registry, WMI, AppX metadata, services, and scheduled tasks.
 - Installer-mode argument generation for per-machine and per-user MSI installs.

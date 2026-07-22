@@ -35,6 +35,8 @@ Hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, dr
 5. To make changes, enable **Uninstall mode**, choose **Uninstall selected**, and approve the confirmation dialog.
 6. Review the post-execution inventory, results, exit codes, and reboot indicators in the exported report.
 
+The main grid uses friendly product and status labels. Hover over a product name to see its exact technical name and identifier; exported audit reports always retain the original values.
+
 Endpoint protection remains audit-only unless **Include security apps** is explicitly enabled in uninstall mode. Enabling it does not override allowlists, protected-software safeguards, manual-review catalog entries, or command validation.
 
 ## Policy profiles

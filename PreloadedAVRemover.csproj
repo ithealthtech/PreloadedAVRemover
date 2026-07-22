@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\it-health-tech.ico</ApplicationIcon>
     <AssemblyName>PreloadedAVRemover</AssemblyName>
     <Version>2.2.1-rc.2</Version>
     <FileVersion>2.2.1.0</FileVersion>
@@ -21,6 +22,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Catalog\oem-removal-catalog.json" />
+    <EmbeddedResource Include="Assets\it-health-tech-mark.png" LogicalName="ItHealthTechMark" />
+    <EmbeddedResource Include="Assets\it-health-tech-logo.png" LogicalName="ItHealthTechLogo" />
+    <EmbeddedResource Include="Assets\it-health-tech.ico" LogicalName="ItHealthTechIcon" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />

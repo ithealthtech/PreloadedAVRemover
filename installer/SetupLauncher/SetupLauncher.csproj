@@ -8,6 +8,7 @@
     <AssemblyName>OEMEndpointCleanupSetup</AssemblyName>
     <RootNamespace>PreloadedAVRemover.Setup</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\Branding\it-health-tech.ico</ApplicationIcon>
     <Company>IT Health Tech LLC</Company>
     <Authors>IT Health Tech LLC</Authors>
     <Copyright>Copyright © 2026 IT Health Tech LLC</Copyright>
@@ -18,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Installer.Core\Installer.Core.csproj" />
     <EmbeddedResource Include="..\Branding\it-health-tech-logo.png" LogicalName="ItHealthTechLogo" />
+    <EmbeddedResource Include="..\Branding\it-health-tech.ico" LogicalName="ItHealthTechIcon" />
   </ItemGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">

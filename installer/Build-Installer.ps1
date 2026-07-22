@@ -35,7 +35,6 @@ Invoke-DotNet -Arguments @('publish', (Join-Path $repoRoot 'PreloadedAVRemover.c
 
 Add-Type -AssemblyName System.Drawing
 $wordmarkPath = Join-Path $repoRoot 'installer\Branding\it-health-tech-logo.png'
-$markPath = Join-Path $repoRoot 'installer\Branding\it-health-tech-mark.png'
 function New-BrandedImage([string]$path, [int]$width, [int]$height, [bool]$dialog) {
     $canvas = [Drawing.Bitmap]::new($width, $height)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
@@ -63,12 +62,7 @@ function New-BrandedImage([string]$path, [int]$width, [int]$height, [bool]$dialo
 New-BrandedImage (Join-Path $brandingOutput 'installer-banner.png') 493 58 $false
 New-BrandedImage (Join-Path $brandingOutput 'installer-dialog.png') 493 312 $true
 
-$mark = [Drawing.Bitmap]::FromFile($markPath)
-try {
-    $iconPath = Join-Path $brandingOutput 'it-health-tech.ico'
-    $icon = [Drawing.Icon]::FromHandle($mark.GetHicon())
-    try { $stream = [IO.File]::Create($iconPath); try { $icon.Save($stream) } finally { $stream.Dispose() } } finally { $icon.Dispose() }
-} finally { $mark.Dispose() }
+Copy-Item -LiteralPath (Join-Path $repoRoot 'installer\Branding\it-health-tech.ico') -Destination (Join-Path $brandingOutput 'it-health-tech.ico') -Force
 
 $licenseText = Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'LICENSE')
 $escapedLicense = $licenseText.Replace('\','\\').Replace('{','\{').Replace('}','\}').Replace("`r`n", '\par ').Replace("`n", '\par ')
@@ -76,7 +70,7 @@ $escapedLicense = $licenseText.Replace('\','\\').Replace('{','\{').Replace('}','
 
 $msiBase = "OEM-Endpoint-Cleanup-$versionSlug-win-x64"
 $wixProject = Join-Path $repoRoot 'installer\Msi\OemEndpointCleanup.Installer.wixproj'
-Invoke-DotNet -Arguments @('build', $wixProject, '-c', $Configuration, "-p:ApplicationSource=$appOutput", "-p:RepoRoot=$repoRoot", "-p:ProductVersion=$productVersion", "-p:ProductDisplayVersion=$displayVersion", "-p:BrandingDir=$brandingOutput", "-p:InstallerFileBase=$msiBase", "-p:InstallerOutput=$msiOutput")
+Invoke-DotNet -Arguments @('build', $wixProject, '-c', $Configuration, '--no-incremental', "-p:ApplicationSource=$appOutput", "-p:RepoRoot=$repoRoot", "-p:ProductVersion=$productVersion", "-p:ProductDisplayVersion=$displayVersion", "-p:BrandingDir=$brandingOutput", "-p:InstallerFileBase=$msiBase", "-p:InstallerOutput=$msiOutput")
 $msiPath = Get-ChildItem -LiteralPath $msiOutput -Recurse -Filter "$msiBase.msi" | Select-Object -First 1 -ExpandProperty FullName
 if (-not $msiPath) { throw 'The MSI build completed without producing the expected file.' }
 

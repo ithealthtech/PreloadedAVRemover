@@ -37,12 +37,12 @@ internal static class Program
 
 internal sealed record UiEntry(PlanItem Plan)
 {
-    public string Name => Plan.Inventory.Name;
-    public string Brand => Plan.Catalog.Brand;
-    public string Type => Plan.Inventory.PackageType.ToString();
-    public string Risk => Plan.Catalog.RiskLevel.ToString();
+    public string Name => FriendlyDisplay.ProductName(Plan.Inventory.Name);
+    public string Brand => Plan.Catalog.Brand == "Any" ? "Various" : Plan.Catalog.Brand;
+    public string Type => FriendlyDisplay.PackageTypeLabel(Plan.Inventory.PackageType);
+    public string Risk => FriendlyDisplay.RiskLabel(Plan.Catalog.RiskLevel);
     public string Confidence => $"{Plan.MatchConfidence}%";
-    public string Decision => Plan.Decision.Action.ToString();
+    public string Decision => FriendlyDisplay.DecisionLabel(Plan.Decision.Action);
     public string Reason => Plan.Decision.Reason;
 }
 
@@ -73,7 +73,7 @@ internal sealed class MainForm : Form
     private TableLayoutPanel _contentLayout = null!;
     private GradientPanel _headerPanel = null!;
     private Label _headerDetail = null!;
-    private Label _copyrightFooter = null!;
+    private Control _copyrightFooter = null!;
     private CleanupPolicy _config = new();
     private AuditReport? _report;
     private List<UiEntry> _entries = [];
@@ -86,6 +86,7 @@ internal sealed class MainForm : Form
     {
         _engine = new CleanupEngine(new WindowsInventoryProvider(), RemovalCatalog.LoadEmbedded(), new ProcessRunner());
         Text = $"OEM Endpoint Cleanup {ProductInfo.Version}";
+        Icon = LoadAppIcon();
         MinimumSize = new Size(860, 620);
         Size = new Size(1280, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -113,16 +114,7 @@ internal sealed class MainForm : Form
         var activityTitle = new Label { Text = "TAMPER-EVIDENT ACTIVITY LOG", Dock = DockStyle.Top, Height = 34, Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(148, 163, 184), BackColor = Navy, Padding = new Padding(13, 11, 0, 0) };
         var activityCard = new Panel { Dock = DockStyle.Fill, BackColor = Navy, Padding = new Padding(14, 0, 14, 14), Margin = new Padding(0) };
         activityCard.Controls.Add(_activity); activityCard.Controls.Add(activityTitle);
-        _copyrightFooter = new Label
-        {
-            Text = "Copyright © 2026 IT Health Tech LLC",
-            Dock = DockStyle.Bottom,
-            Height = 26,
-            TextAlign = ContentAlignment.MiddleCenter,
-            BackColor = Canvas,
-            ForeColor = Slate,
-            Font = new Font("Segoe UI", 8.5f)
-        };
+        _copyrightFooter = BuildCopyrightFooter();
         _logRow.SizeType = SizeType.Absolute; _logRow.Height = 0;
         _contentLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 18, 30, 20), RowCount = 3, ColumnCount = 1, BackColor = Canvas };
         _contentLayout.RowStyles.Add(_contentHeaderRow); _contentLayout.RowStyles.Add(_gridRow); _contentLayout.RowStyles.Add(_logRow);
@@ -145,6 +137,7 @@ internal sealed class MainForm : Form
         _profile.SelectedIndexChanged += async (_, _) => { if (Visible) await AuditAsync(); };
         _grid.SelectionChanged += (_, _) => UpdateRunButton();
         _grid.CellFormatting += FormatCell;
+        _grid.CellToolTipTextNeeded += ShowTechnicalName;
         Resize += (_, _) => ApplyResponsiveLayout();
         ApplyResponsiveLayout();
         Shown += async (_, _) => await AuditAsync();
@@ -152,7 +145,7 @@ internal sealed class MainForm : Form
 
     private Control BuildHeader()
     {
-        var mark = new ShieldMark { Size = new Size(44, 44), Margin = new Padding(0, 1, 14, 0) };
+        var mark = new PictureBox { Image = LoadBrandImage("ItHealthTechMark"), Size = new Size(44, 44), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 1, 14, 0) };
         var heading = new Label { Text = "OEM Endpoint Cleanup", Font = new Font("Segoe UI Semibold", 19), ForeColor = Color.White, AutoSize = true, Margin = new Padding(0) };
         var version = new Label { Text = $"SECURE AUDIT + REMOVAL  /  VERSION {ProductInfo.Version}", Font = new Font("Segoe UI Semibold", 8), ForeColor = Color.FromArgb(94, 234, 212), AutoSize = true, Margin = new Padding(2, 7, 0, 0) };
         _headerDetail = new Label { Text = "Audit first. Uninstall only what policy approves.", Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(2, 5, 0, 0) };
@@ -177,6 +170,33 @@ internal sealed class MainForm : Form
         result.RowStyles.Add(new RowStyle(SizeType.Absolute, 43)); result.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); result.Controls.Add(summaryRow, 0, 0); result.Controls.Add(_toolbar, 0, 1); return result;
     }
 
+    private static Control BuildCopyrightFooter()
+    {
+        var logo = new PictureBox { Image = LoadBrandImage("ItHealthTechLogo"), Size = new Size(132, 27), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 3, 10, 0) };
+        var notice = new Label { Text = "© 2026 IT Health Tech LLC  •  GPL-3.0-only", AutoSize = true, ForeColor = Slate, Font = new Font("Segoe UI", 8.5f), Margin = new Padding(0, 8, 0, 0) };
+        var content = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0) };
+        content.Controls.AddRange([logo, notice]);
+        var footer = new TableLayoutPanel { Dock = DockStyle.Bottom, Height = 38, ColumnCount = 3, RowCount = 1, BackColor = Canvas };
+        footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        footer.Controls.Add(content, 1, 0);
+        return footer;
+    }
+
+    private static Image LoadBrandImage(string resourceName)
+    {
+        using var stream = typeof(MainForm).Assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Brand resource '{resourceName}' is missing.");
+        return new Bitmap(stream);
+    }
+
+    private static Icon LoadAppIcon()
+    {
+        using var stream = typeof(MainForm).Assembly.GetManifestResourceStream("ItHealthTechIcon")
+            ?? throw new InvalidOperationException("Application icon resource is missing.");
+        using var icon = new Icon(stream);
+        return (Icon)icon.Clone();
+    }
+
     private void ApplyResponsiveLayout()
     {
         if (_contentLayout is null || _toolbar is null || _headerPanel is null) return;
@@ -191,7 +211,7 @@ internal sealed class MainForm : Form
         _logRow.SizeType = SizeType.Absolute; _logRow.Height = _activityVisible ? (shortWindow ? 120 : 190) : 0;
         _grid.Columns[nameof(UiEntry.Brand)].Visible = ClientSize.Width >= 940;
         _grid.Columns[nameof(UiEntry.Type)].Visible = ClientSize.Width >= 900;
-        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1120;
+        _grid.Columns[nameof(UiEntry.Confidence)].Visible = ClientSize.Width >= 1440;
         _grid.Columns[nameof(UiEntry.Reason)].Visible = ClientSize.Width >= 1440;
         _contentLayout.PerformLayout();
     }
@@ -204,7 +224,7 @@ internal sealed class MainForm : Form
             ApplyResponsiveLayout();
             PerformLayout();
             if (_toolbar.Width <= 0 || _toolbar.Height <= 0 || _grid.Width <= 0 || _activity.Width <= 0 ||
-                _copyrightFooter.Width <= 0 || _copyrightFooter.Height <= 0 || string.IsNullOrWhiteSpace(_copyrightFooter.Text))
+                _copyrightFooter.Width <= 0 || _copyrightFooter.Height <= 0)
                 throw new InvalidOperationException($"Responsive layout failed at {size.Width}x{size.Height}.");
         }
     }
@@ -326,8 +346,15 @@ internal sealed class MainForm : Form
     private void FormatCell(object? sender, DataGridViewCellFormattingEventArgs e)
     {
         var property = _grid.Columns[e.ColumnIndex].DataPropertyName;
-        if (property == nameof(UiEntry.Risk) && e.Value is string risk) e.CellStyle!.ForeColor = risk == nameof(RiskLevel.Safe) ? Color.FromArgb(5, 150, 105) : risk == nameof(RiskLevel.Caution) ? Color.FromArgb(217, 119, 6) : Red;
-        if (property == nameof(UiEntry.Decision) && e.Value is string decision) e.CellStyle!.ForeColor = decision == nameof(DecisionAction.Remove) ? Red : Slate;
+        if (property == nameof(UiEntry.Risk) && e.Value is string risk) e.CellStyle!.ForeColor = risk == "Low risk" ? Color.FromArgb(5, 150, 105) : risk == "Review first" ? Color.FromArgb(217, 119, 6) : Red;
+        if (property == nameof(UiEntry.Decision) && e.Value is string decision) e.CellStyle!.ForeColor = decision == "Can uninstall" ? Red : Slate;
+    }
+
+    private void ShowTechnicalName(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != nameof(UiEntry.Name)) return;
+        if (_grid.Rows[e.RowIndex].DataBoundItem is UiEntry entry)
+            e.ToolTipText = $"Technical name: {entry.Plan.Inventory.Name}{Environment.NewLine}Identifier: {entry.Plan.Inventory.Id}";
     }
 
     private static void StyleButton(Button button, Color backColor, Color foreColor, Color borderColor, int width) { button.AutoSize = false; button.Size = new Size(width, 36); button.FlatStyle = FlatStyle.Flat; button.FlatAppearance.BorderSize = 1; button.FlatAppearance.BorderColor = borderColor; button.BackColor = backColor; button.ForeColor = foreColor; button.Font = new Font("Segoe UI Semibold", 9); button.Cursor = Cursors.Hand; button.Margin = new Padding(0, 0, 10, 0); }
@@ -364,12 +391,6 @@ internal sealed class GradientPanel : Panel
 {
     public GradientPanel() => DoubleBuffered = true;
     protected override void OnPaintBackground(PaintEventArgs e) { using var brush = new LinearGradientBrush(ClientRectangle, Color.FromArgb(15, 23, 42), Color.FromArgb(17, 94, 89), 0f); e.Graphics.FillRectangle(brush, ClientRectangle); }
-}
-
-internal sealed class ShieldMark : Control
-{
-    public ShieldMark() { SetStyle(ControlStyles.SupportsTransparentBackColor | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true); DoubleBuffered = true; BackColor = Color.Transparent; }
-    protected override void OnPaint(PaintEventArgs e) { e.Graphics.SmoothingMode = SmoothingMode.AntiAlias; using var glow = new SolidBrush(Color.FromArgb(42, 255, 255, 255)); e.Graphics.FillEllipse(glow, 0, 0, Width - 1, Height - 1); using var pen = new Pen(Color.FromArgb(94, 234, 212), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round }; var shield = new[] { new Point(Width / 2, 11), new Point(43, 17), new Point(40, 37), new Point(Width / 2, 47), new Point(16, 37), new Point(13, 17) }; e.Graphics.DrawPolygon(pen, shield); e.Graphics.DrawLines(pen, new Point[] { new(20, 28), new(26, 34), new(37, 22) }); }
 }
 
 internal sealed class BorderedPanel : Panel
