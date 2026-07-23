@@ -3,8 +3,11 @@
   "dryRun": true,
   "force": false,
   "allowSecurityProductRemoval": false,
+  "allowRemoteManagementRemoval": false,
   "processTimeoutSeconds": 900,
   "allowList": [
+    "ConnectWise*",
+    "*ScreenConnect*",
     "Lenovo Vantage",
     "*SupportAssist*"
   ],

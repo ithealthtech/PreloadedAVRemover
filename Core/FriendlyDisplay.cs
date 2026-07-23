@@ -13,7 +13,11 @@ public static partial class FriendlyDisplay
         ["Microsoft.Getstarted"] = "Windows Tips",
         ["Microsoft.GamingApp"] = "Xbox",
         ["Microsoft.BingNews"] = "Microsoft News",
-        ["Microsoft.BingWeather"] = "Microsoft Weather"
+        ["Microsoft.BingWeather"] = "Microsoft Weather",
+        ["AnyDesk"] = "AnyDesk",
+        ["McAfee LiveSafe"] = "McAfee LiveSafe",
+        ["ScreenConnect Client"] = "ScreenConnect Client",
+        ["WildTangent Games"] = "WildTangent Games"
     };
 
     public static string ProductName(string rawName)
@@ -65,6 +69,8 @@ public static partial class FriendlyDisplay
     public static string CategoryLabel(PlanItem plan)
     {
         var id = plan.Catalog.Id;
+        if (SoftwareClassification.IsRemoteManagementTool(plan))
+            return SoftwareClassification.IsApprovedManagementTool(plan.Inventory, plan.Catalog) ? "Approved Management" : "Remote / Management";
         if (plan.Catalog.IsSecurityProduct) return "Antivirus / Security";
         if (ContainsAny(id, "command-center", "control-center", "armoury-crate", "msi-center", "optimizer", "settings", "synapse", "vantage")) return "OEM Control Panel";
         if (ContainsAny(id, "recovery", "function-key", "surface-management")) return "Hardware / Recovery";
@@ -86,6 +92,8 @@ public static partial class FriendlyDisplay
         "Bloatware" => "Promotional, registration, onboarding, game, or marketing software not required for core operation.",
         "OEM Support / Updates" => "Manufacturer support, diagnostics, warranty, driver, or update tooling.",
         "Background Component" => "A service or scheduled component detected for audit and manual review.",
+        "Approved Management" => "ConnectWise or ScreenConnect software approved for this organization's management stack.",
+        "Remote / Management" => "Remote-access or endpoint-management software that should be investigated before any removal decision.",
         _ => "Optional manufacturer utility that does not fit another category."
     };
 

@@ -39,5 +39,7 @@ Installed-app metadata and registry uninstall strings are untrusted input. Catal
 
 Protected software and security products are evaluated before organization blocklists. This prevents a broad wildcard from removing RMM, VPN, backup, encryption, drivers, firmware, or active endpoint protection.
 
+Remote-management catalog entries use the same inventory and audit pipeline but are routed to a dedicated right-hand UI panel. Removal requires a separate explicit authorization flag in addition to uninstall mode, policy eligibility, selection, confirmation, and normal command validation. ConnectWise and ScreenConnect are built-in approved-management classifications and never become removal decisions.
+
 Catalog matches carry a 0–100 confidence score plus human- and machine-readable rationale. Low-confidence matches and tied highest-confidence candidates become manual-review decisions; they never reach command validation. Active Security Center products are independently guarded so removal does not depend solely on a catalog flag.
 

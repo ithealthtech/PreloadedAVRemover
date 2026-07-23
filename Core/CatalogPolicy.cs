@@ -73,7 +73,11 @@ public sealed class RemovalCatalog
         if (exactPackageType) { score += 20; rationale.Add("Package type matched exactly"); }
         else { score += 10; rationale.Add("MSI/EXE registry installer fallback matched"); }
 
-        if (entry.Brand.Equals("Any", StringComparison.OrdinalIgnoreCase)) { score += 5; rationale.Add("Catalog entry is vendor-neutral"); }
+        if (entry.Brand.Equals("Any", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 5; rationale.Add("Catalog entry is vendor-neutral");
+            if (item.Publisher.Contains(entry.Vendor, StringComparison.OrdinalIgnoreCase)) { score += 15; rationale.Add("Publisher matched catalog vendor"); }
+        }
         else
         {
             if (ManufacturerMatches(entry.Brand, device.Manufacturer)) { score += 15; rationale.Add("Device manufacturer matched catalog brand"); }
@@ -111,7 +115,17 @@ public static class PolicyEvaluator
     public static PolicyDecision Evaluate(InventoryItem item, CatalogEntry entry, CleanupPolicy policy)
     {
         if (Matches(policy.AllowList, item.Name, entry.Id)) return new(DecisionAction.Skip, "Organization allowlist");
-        if (ProtectedPatterns.Any(p => item.Name.Contains(p, StringComparison.OrdinalIgnoreCase))) return new(DecisionAction.Skip, "Protected business-critical, driver, firmware, remote-management, backup, encryption, or VPN software");
+        if (SoftwareClassification.IsApprovedManagementTool(item, entry)) return new(DecisionAction.Skip, "Approved ConnectWise management platform");
+        var catalogedRemoteTool = entry.Id.StartsWith("remote-", StringComparison.OrdinalIgnoreCase);
+        if (catalogedRemoteTool && !policy.AllowRemoteManagementRemoval) return new(DecisionAction.ManualReview, "Remote-tool removal was not explicitly enabled");
+        if (catalogedRemoteTool)
+        {
+            if (Matches(policy.BlockList, item.Name, entry.Id)) return new(DecisionAction.Remove, "Organization blocklist with explicit remote-tool authorization", true);
+            return policy.Profile == PolicyProfile.Conservative
+                ? new(DecisionAction.Skip, "Conservative policy requires a blocklist match for remote-tool removal")
+                : new(DecisionAction.Remove, "Explicit remote-tool authorization with confirmation");
+        }
+        if (!catalogedRemoteTool && ProtectedPatterns.Any(p => item.Name.Contains(p, StringComparison.OrdinalIgnoreCase))) return new(DecisionAction.Skip, "Protected business-critical, driver, firmware, remote-management, backup, encryption, or VPN software");
         if (entry.IsSecurityProduct && !policy.AllowSecurityProductRemoval) return new(DecisionAction.AuditOnly, "Endpoint protection removal was not explicitly enabled");
         if (!entry.AutomaticRemovalSupported) return new(DecisionAction.ManualReview, "Catalog entry does not permit generalized automatic removal");
         if (Matches(policy.BlockList, item.Name, entry.Id)) return new(DecisionAction.Remove, "Organization blocklist", true);

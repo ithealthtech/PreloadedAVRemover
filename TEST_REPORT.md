@@ -6,7 +6,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 
 ## Result
 
-- Passed: 79
+- Passed: 93
 - Failed: 0
 - Skipped: 0
 - Build warnings: 0 after analyzer cleanup
@@ -45,6 +45,8 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - JSON report schema 2.2, HTML escaping, match evidence, and complete device/security context.
 - Friendly application-name cleanup, locale removal, AppX aliases, and operator-facing package/risk/decision labels.
 - Deterministic category classification for security, OEM control panels, hardware/recovery tools, trialware, consumer apps, promotional bloatware, OEM support/update tools, and background components.
+- Dedicated remote-tool detection and classification covers ConnectWise/ScreenConnect, Atera, Splashtop, AnyDesk, TeamViewer, NinjaOne, Kaseya, Datto RMM, N-able, Syncro, Action1, BeyondTrust/Bomgar, LogMeIn/GoTo Resolve, RustDesk, Zoho Assist, DWService, Remote Utilities, and Supremo.
+- ConnectWise and ScreenConnect remain approved and skipped even with explicit remote-tool authorization and an aggressive wildcard blocklist; other remote tools require the separate authorization gate before policy can permit removal.
 - Policy loading, missing policy defaults, and malformed-policy fail-closed behavior.
 - Read-only integration inventory against the local Windows registry, WMI, AppX metadata, services, and scheduled tasks.
 - Installer-mode argument generation for per-machine and per-user MSI installs.

@@ -39,6 +39,8 @@ The embedded catalog includes Dell, Alienware, HP, ASUS, Acer, Lenovo, MSI, Sams
 
 Hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, drivers, audio/network/chipset components, RMM agents, remote-access tools, VPN clients, BitLocker tooling, and backup agents are preserved by policy.
 
+The main window separates OEM/optional software from remote-management and potentially unwanted tools. Atera, Splashtop, AnyDesk, TeamViewer, NinjaOne, Kaseya, Datto RMM, N-able, Syncro, Action1, BeyondTrust/Bomgar, LogMeIn/GoTo Resolve, RustDesk, Zoho Assist, DWService, Remote Utilities, Supremo, and similar cataloged tools appear in the dedicated investigation panel. Remote-tool removal requires uninstall mode, the separate **Include remote tools** authorization, an eligible policy decision, row selection, and final confirmation. ConnectWise and ScreenConnect products are explicitly classified as approved management software and remain preserved even when remote-tool removal and an aggressive organization blocklist are both enabled.
+
 ## Safe usage
 
 1. Start `PreloadedAVRemover.exe` and approve UAC.
@@ -51,6 +53,8 @@ Hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, dr
 The main grid uses friendly product and status labels plus a color-coded category for quick triage: **Antivirus / Security**, **OEM Control Panel**, **Hardware / Recovery**, **Trialware**, **Consumer App**, **Bloatware**, **OEM Support / Updates**, **Background Component**, or **OEM Utility**. Hover over a category for its meaning, or over a product name for its exact technical name and identifier; exported audit reports always retain the original values.
 
 Endpoint protection remains audit-only unless **Include security apps** is explicitly enabled in uninstall mode. Enabling it does not override allowlists, protected-software safeguards, manual-review catalog entries, or command validation.
+
+Remote-management tools similarly remain manual-review unless **Include remote tools** is explicitly enabled in uninstall mode. Conservative policy additionally requires an organization blocklist match; Balanced or Aggressive policy permits a cataloged remote tool only after confirmation. ConnectWise and ScreenConnect remain allowlisted and cannot be promoted to removal by this control.
 
 ## Policy profiles
 
@@ -78,8 +82,9 @@ Example:
   "dryRun": true,
   "force": false,
   "allowSecurityProductRemoval": false,
+  "allowRemoteManagementRemoval": false,
   "processTimeoutSeconds": 900,
-  "allowList": ["Lenovo Vantage", "*SupportAssist*"],
+  "allowList": ["ConnectWise*", "*ScreenConnect*", "Lenovo Vantage", "*SupportAssist*"],
   "blockList": ["WildTangent Games"],
   "reportDirectory": "C:\\ProgramData\\OemCleanup\\Reports"
 }
