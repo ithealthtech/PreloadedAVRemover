@@ -35,32 +35,55 @@ Invoke-DotNet -Arguments @('publish', (Join-Path $repoRoot 'PreloadedAVRemover.c
 
 Add-Type -AssemblyName System.Drawing
 $wordmarkPath = Join-Path $repoRoot 'installer\Branding\it-health-tech-logo.png'
+$markPath = Join-Path $repoRoot 'installer\Branding\it-health-tech-mark.png'
 function New-BrandedImage([string]$path, [int]$width, [int]$height, [bool]$dialog) {
     $canvas = [Drawing.Bitmap]::new($width, $height)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
     try {
         $graphics.Clear([Drawing.Color]::White)
+        $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
         $graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::HighQuality
-        $source = [Drawing.Image]::FromFile($wordmarkPath)
-        try {
-            if ($dialog) {
-                $graphics.FillRectangle([Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(8,42,76)), 0, 0, 155, $height)
-                $targetWidth = 290; $targetHeight = [int]($source.Height * ($targetWidth / $source.Width))
-                $graphics.DrawImage($source, 180, 42, $targetWidth, $targetHeight)
-                $font = [Drawing.Font]::new('Segoe UI', 12, [Drawing.FontStyle]::Regular)
-                $brush = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(71,85,105))
-                try { $graphics.DrawString('Secure OEM audit and removal', $font, $brush, 183, 130) } finally { $font.Dispose(); $brush.Dispose() }
-            } else {
-                $targetHeight = 40; $targetWidth = [int]($source.Width * ($targetHeight / $source.Height))
-                $graphics.DrawImage($source, $width - $targetWidth - 14, 9, $targetWidth, $targetHeight)
-                $graphics.FillRectangle([Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(0,155,239)), 0, 0, 8, $height)
-            }
-        } finally { $source.Dispose() }
+        if ($dialog) {
+            $railBrush = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(8,42,76))
+            try {
+                $graphics.FillRectangle($railBrush, 0, 0, 155, $height)
+            } finally { $railBrush.Dispose() }
+            $source = [Drawing.Image]::FromFile($markPath)
+            try { $graphics.DrawImage($source, 41, 52, 72, 72) } finally { $source.Dispose() }
+        } else {
+            # WiX reserves the left side of banner images for page titles and descriptions.
+            # Keep the wordmark entirely inside the right-side branding region.
+            $source = [Drawing.Image]::FromFile($wordmarkPath)
+            try {
+                $targetWidth = 125
+                $targetHeight = [int][Math]::Round($source.Height * ($targetWidth / $source.Width))
+                $graphics.DrawImage($source, $width - $targetWidth - 12, [int](($height - $targetHeight) / 2), $targetWidth, $targetHeight)
+            } finally { $source.Dispose() }
+        }
         $canvas.Save($path, [Drawing.Imaging.ImageFormat]::Png)
     } finally { $graphics.Dispose(); $canvas.Dispose() }
 }
 New-BrandedImage (Join-Path $brandingOutput 'installer-banner.png') 493 58 $false
 New-BrandedImage (Join-Path $brandingOutput 'installer-dialog.png') 493 312 $true
+
+function Assert-WhiteArtworkRegion([string]$path, [int]$left, [int]$top, [int]$right, [int]$bottom) {
+    $image = [Drawing.Bitmap]::new($path)
+    try {
+        $white = [Drawing.Color]::White.ToArgb()
+        for ($y = $top; $y -lt $bottom; $y++) {
+            for ($x = $left; $x -lt $right; $x++) {
+                if ($image.GetPixel($x, $y).ToArgb() -ne $white) {
+                    throw "Installer artwork intrudes into the reserved text region at ($x,$y): $path"
+                }
+            }
+        }
+    } finally { $image.Dispose() }
+}
+
+# Fail packaging if branding overlaps regions where standard WiX dialogs render text.
+Assert-WhiteArtworkRegion (Join-Path $brandingOutput 'installer-dialog.png') 155 0 493 312
+Assert-WhiteArtworkRegion (Join-Path $brandingOutput 'installer-banner.png') 0 0 348 58
 
 Copy-Item -LiteralPath (Join-Path $repoRoot 'installer\Branding\it-health-tech.ico') -Destination (Join-Path $brandingOutput 'it-health-tech.ico') -Force
 
