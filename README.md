@@ -143,6 +143,8 @@ The branded setup launcher offers three modes:
 - **Just me** — installs the same dual-purpose MSI per-user under Local AppData without registering it for other Windows users.
 - **Portable** — verifies and extracts the portable ZIP to a selected folder without Windows Installer registration or shortcuts.
 
+![OEM Endpoint Cleanup Windows Installer welcome page](docs/images/oem-endpoint-cleanup-installer.png)
+
 Build all three artifacts with:
 
 ```powershell

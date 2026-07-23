@@ -50,6 +50,7 @@ Command: `dotnet test .\tests\PreloadedAVRemover.Tests\PreloadedAVRemover.Tests.
 - Installer-mode argument generation for per-machine and per-user MSI installs.
 - Portable package checksum validation, normal extraction, traversal rejection, and symbolic-link rejection.
 - Branded setup launcher layout self-test and adjacent MSI/ZIP payload verification.
+- WiX welcome and banner artwork is constrained to reserved branding regions; packaging fails if non-white pixels intrude into installer text areas.
 - WiX MSI build validation with zero warnings and zero errors.
 
 ## Remaining risks
