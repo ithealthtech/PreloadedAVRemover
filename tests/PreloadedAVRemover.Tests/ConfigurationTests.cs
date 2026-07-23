@@ -8,16 +8,16 @@ public sealed class ConfigurationTests
     public void MissingPolicyFile_ReturnsConservativeDryRunDefaults()
     {
         var policy = PolicyConfiguration.Load(Path.Combine(TestData.TempDirectory(), "missing.json"));
-        Assert.Equal(PolicyProfile.Conservative, policy.Profile); Assert.True(policy.DryRun); Assert.False(policy.AllowSecurityProductRemoval);
+        Assert.Equal(PolicyProfile.Conservative, policy.Profile); Assert.True(policy.DryRun); Assert.False(policy.AllowSecurityProductRemoval); Assert.False(policy.AllowRemoteManagementRemoval);
     }
 
     [Fact]
     public void PolicyFile_LoadsProfileAndLists()
     {
         var path = Path.Combine(TestData.TempDirectory(), "policy.json");
-        File.WriteAllText(path, """{"profile":"Aggressive","dryRun":false,"force":true,"allowList":["Keep*"],"blockList":["Remove*"]}""");
+        File.WriteAllText(path, """{"profile":"Aggressive","dryRun":false,"force":true,"allowRemoteManagementRemoval":true,"allowList":["Keep*"],"blockList":["Remove*"]}""");
         var policy = PolicyConfiguration.Load(path);
-        Assert.Equal(PolicyProfile.Aggressive, policy.Profile); Assert.False(policy.DryRun); Assert.True(policy.Force);
+        Assert.Equal(PolicyProfile.Aggressive, policy.Profile); Assert.False(policy.DryRun); Assert.True(policy.Force); Assert.True(policy.AllowRemoteManagementRemoval);
         Assert.Equal("Keep*", policy.AllowList.Single()); Assert.Equal("Remove*", policy.BlockList.Single());
     }
 
@@ -26,7 +26,7 @@ public sealed class ConfigurationTests
     {
         var path = Path.Combine(TestData.TempDirectory(), "policy.json"); File.WriteAllText(path, "{not-json");
         var policy = PolicyConfiguration.Load(path);
-        Assert.True(policy.DryRun); Assert.Equal(PolicyProfile.Conservative, policy.Profile); Assert.False(policy.AllowSecurityProductRemoval);
+        Assert.True(policy.DryRun); Assert.Equal(PolicyProfile.Conservative, policy.Profile); Assert.False(policy.AllowSecurityProductRemoval); Assert.False(policy.AllowRemoteManagementRemoval);
     }
 
     [Fact]

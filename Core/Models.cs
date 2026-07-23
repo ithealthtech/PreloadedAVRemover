@@ -35,6 +35,7 @@ public sealed class CleanupPolicy
     public bool DryRun { get; init; } = true;
     public bool Force { get; init; }
     public bool AllowSecurityProductRemoval { get; init; }
+    public bool AllowRemoteManagementRemoval { get; init; }
     public int ProcessTimeoutSeconds { get; init; } = 900;
     public string[] AllowList { get; init; } = [];
     public string[] BlockList { get; init; } = [];

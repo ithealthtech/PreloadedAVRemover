@@ -10,6 +10,10 @@ public sealed class FriendlyDisplayTests
     [InlineData("BgTaskRegistrationMaintenanceTask", "Background Task Registration Maintenance")]
     [InlineData("ASUSOptimizationService", "ASUS Optimization")]
     [InlineData("Microsoft 365 Apps for enterprise - en-us", "Microsoft 365 Apps for enterprise")]
+    [InlineData("AnyDesk", "AnyDesk")]
+    [InlineData("McAfee LiveSafe", "McAfee LiveSafe")]
+    [InlineData("ScreenConnect Client", "ScreenConnect Client")]
+    [InlineData("WildTangent Games", "WildTangent Games")]
     public void ProductName_RemovesTechnicalJargon(string raw, string expected) => Assert.Equal(expected, FriendlyDisplay.ProductName(raw));
 
     [Fact]
@@ -34,5 +38,14 @@ public sealed class FriendlyDisplayTests
         var inventory = new InventoryItem("inventory", "Example", "1", "Vendor", type, "Test");
         var catalog = TestData.Entry(type, security: security, id: id);
         Assert.Equal(expected, FriendlyDisplay.CategoryLabel(TestData.Plan(inventory, catalog)));
+    }
+
+    [Theory]
+    [InlineData("remote-connectwise", "ConnectWise Automate", "Approved Management")]
+    [InlineData("remote-anydesk", "AnyDesk", "Remote / Management")]
+    public void CategoryLabel_DistinguishesApprovedAndInvestigatedRemoteTools(string id, string name, string expected)
+    {
+        var inventory = new InventoryItem("inventory", name, "1", name, PackageType.Exe, "Test");
+        Assert.Equal(expected, FriendlyDisplay.CategoryLabel(TestData.Plan(inventory, TestData.Entry(PackageType.Exe, id: id))));
     }
 }

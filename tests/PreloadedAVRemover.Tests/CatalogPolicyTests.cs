@@ -17,6 +17,58 @@ public sealed class CatalogPolicyTests
     }
 
     [Fact]
+    public void EmbeddedCatalog_CoversRemoteTools_AndKeepsThemNonAutomatic()
+    {
+        var entries = RemovalCatalog.LoadEmbedded().Entries.Where(e => e.Id.StartsWith("remote-", StringComparison.OrdinalIgnoreCase)).ToList();
+        foreach (var id in new[] { "remote-connectwise", "remote-screenconnect", "remote-atera", "remote-splashtop", "remote-anydesk", "remote-teamviewer", "remote-ninjaone", "remote-kaseya", "remote-datto", "remote-nable", "remote-rustdesk" })
+            Assert.Contains(entries, e => e.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        Assert.All(entries, entry =>
+        {
+            Assert.Equal(RiskLevel.ManualReview, entry.RiskLevel);
+            Assert.False(entry.AutomaticRemovalSupported);
+        });
+    }
+
+    [Theory]
+    [InlineData("Atera Agent", "Atera", "remote-atera")]
+    [InlineData("Splashtop Streamer", "Splashtop Inc.", "remote-splashtop")]
+    [InlineData("AnyDesk", "AnyDesk Software GmbH", "remote-anydesk")]
+    [InlineData("RustDesk", "RustDesk", "remote-rustdesk")]
+    public void RemoteTools_AreDetectedAndRequireInvestigation(string name, string publisher, string expectedId)
+    {
+        var item = TestData.Msi(name) with { Publisher = publisher };
+        var match = Assert.Single(RemovalCatalog.LoadEmbedded().Match([item], TestData.Device(), new CleanupPolicy()));
+        Assert.Equal(expectedId, match.Catalog.Id);
+        Assert.True(SoftwareClassification.IsRemoteManagementTool(match));
+        Assert.Equal("Investigate", SoftwareClassification.RemoteDisposition(match));
+        Assert.NotEqual(DecisionAction.Remove, match.Decision.Action);
+    }
+
+    [Theory]
+    [InlineData("ConnectWise Automate", "ConnectWise")]
+    [InlineData("ScreenConnect Client", "ScreenConnect Software")]
+    public void ConnectWiseProducts_AreApprovedEvenUnderAggressiveWildcardBlockList(string name, string publisher)
+    {
+        var item = TestData.Msi(name) with { Publisher = publisher };
+        var policy = new CleanupPolicy { Profile = PolicyProfile.Aggressive, BlockList = ["*"], AllowRemoteManagementRemoval = true };
+        var match = Assert.Single(RemovalCatalog.LoadEmbedded().Match([item], TestData.Device(), policy));
+        Assert.Equal("Approved", SoftwareClassification.RemoteDisposition(match));
+        Assert.Equal(DecisionAction.Skip, match.Decision.Action);
+        Assert.Contains("Approved ConnectWise", match.Decision.Reason);
+    }
+
+    [Fact]
+    public void NonApprovedRemoteTool_RequiresExplicitAuthorizationBeforeRemoval()
+    {
+        var item = TestData.Msi("AnyDesk") with { Publisher = "AnyDesk Software GmbH" };
+        var catalog = RemovalCatalog.LoadEmbedded();
+        var defaultDecision = Assert.Single(catalog.Match([item], TestData.Device(), new CleanupPolicy { Profile = PolicyProfile.Balanced })).Decision;
+        var authorizedDecision = Assert.Single(catalog.Match([item], TestData.Device(), new CleanupPolicy { Profile = PolicyProfile.Balanced, AllowRemoteManagementRemoval = true })).Decision;
+        Assert.Equal(DecisionAction.ManualReview, defaultDecision.Action);
+        Assert.Equal(DecisionAction.Remove, authorizedDecision.Action);
+    }
+
+    [Fact]
     public void CatalogMatching_UsesDeviceBrandAndProductPattern()
     {
         var catalog = new RemovalCatalog([TestData.Entry(brand: "Dell", pattern: "Support Trial")]);
