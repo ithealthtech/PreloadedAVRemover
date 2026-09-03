@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ithealthtech/PreloadedAVRemover/security/advisories/new
+    about: Report security defects privately. Never open a public issue for one.
+  - name: Documentation site
+    url: https://ithealthtech.github.io/PreloadedAVRemover/
+    about: Operator guide, configuration reference, and troubleshooting.
+  - name: Deployment and configuration reference
+    url: https://github.com/ithealthtech/PreloadedAVRemover/blob/main/docs/README.md
+    about: Policy schema, report formats, architecture, and the security model.

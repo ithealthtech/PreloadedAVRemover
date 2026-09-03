@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a capability or improvement
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For new OEM software coverage, use the **Catalog request** form instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the operational situation, not the solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the tool to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What are you doing today instead?
+
+  - type: dropdown
+    id: safety
+    attributes:
+      label: Would this make the tool more willing to act on a device?
+      description: |
+        Changes that widen what can be removed are held to a higher evidence bar. See
+        the design rules in CONTRIBUTING.md.
+      options:
+        - "No - it does not change what can be removed"
+        - "Yes - it would widen removal eligibility"
+        - "Not sure"
+    validations:
+      required: true

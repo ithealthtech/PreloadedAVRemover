@@ -1,0 +1,93 @@
+name: Bug report
+description: Something behaved incorrectly
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not use this form for security defects.** Report those privately through
+        [SECURITY.md](https://github.com/ithealthtech/PreloadedAVRemover/blob/main/SECURITY.md).
+
+        If the tool declined to remove something, that is often intentional. Check
+        [When an item will not remove](https://github.com/ithealthtech/PreloadedAVRemover/blob/main/docs/operator-guide.md#when-an-item-will-not-remove)
+        before filing.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "2.2.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options:
+        - Setup launcher - Everyone on this computer
+        - Setup launcher - Just me
+        - Setup launcher - Portable
+        - MSI directly
+        - Portable ZIP directly
+        - Built from source
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and OEM model
+      placeholder: Windows 11 Pro 24H2, Dell Latitude 5450
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Launch elevated
+        2. Select the Balanced profile
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: policy
+    attributes:
+      label: Policy file in effect
+      description: Paste policy.json, or enter "none" if no policy file is deployed.
+      render: json
+
+  - type: textarea
+    id: report
+    attributes:
+      label: Relevant report and audit-log excerpts
+      description: Please redact hostname, serial number, and customer data.
+      render: json
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: This is not a security defect.
+          required: true
+        - label: I have redacted hostname, serial number, and any customer-identifying data.
+          required: true

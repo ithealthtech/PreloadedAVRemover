@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How to run OEM Endpoint Cleanup safely: the audit-first workflow, policy profiles, the two authorization gates, and how to read a run.">
+  <meta name="theme-color" content="#0b0a17">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Operator guide &middot; OEM Endpoint Cleanup</title>
+  <link rel="icon" href="images/it-health-tech-mark.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="OEM Endpoint Cleanup documentation home">
+        <span class="brand-mark" aria-hidden="true">O</span>
+        <span>OEM Endpoint Cleanup</span>
+      </a>
+      <nav class="site-nav" data-site-nav aria-label="Primary navigation">
+        <a href="index.html">Overview</a>
+        <a href="guide.html" aria-current="page">Operator guide</a>
+        <a href="reference.html">Reference</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Download</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" type="button" data-doc-theme-toggle aria-label="Use light documentation theme">&#9728;</button>
+        <button class="menu-button" type="button" data-menu-toggle aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Operator guide</p>
+        <h1>Run it safely on a production machine.</h1>
+        <p class="hero-copy">This guide assumes you are a technician working on a device you are authorized to administer. A first run changes nothing, so you can start with an audit before deciding anything.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container docs-layout">
+        <nav class="toc" aria-label="On this page">
+          <h2>On this page</h2>
+          <a href="#install">Install</a>
+          <a href="#safe-run">A safe run</a>
+          <a href="#grid">Reading the grid</a>
+          <a href="#gates">The two authorization gates</a>
+          <a href="#profiles">Policy profiles</a>
+          <a href="#refusals">When an item will not remove</a>
+          <a href="#after">After the run</a>
+        </nav>
+
+        <div class="docs-content">
+          <h2 id="install">Install</h2>
+          <p>Download the setup launcher from the <a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">latest release</a> and choose a mode:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Mode</th><th>Use when</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Everyone on this computer</strong></td><td>Standard fleet deployment. Installs per-machine under Program Files.</td></tr>
+                <tr><td><strong>Just me</strong></td><td>You cannot install per-machine software. Installs under Local AppData.</td></tr>
+                <tr><td><strong>Portable</strong></td><td>One-off remediation on a device you will not enroll. No installer registration.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="notice notice-warning">
+            <span aria-hidden="true">!</span>
+            <p>The executable is not code-signed and may trigger SmartScreen. Verify your download against the published <code>SHA256SUMS.txt</code> before running it.</p>
+          </div>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="#verify-hash">Copy</button>
+            <pre><code id="verify-hash">Get-FileHash .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi -Algorithm SHA256</code></pre>
+          </div>
+
+          <h2 id="safe-run">A safe run, step by step</h2>
+          <ol class="step-list">
+            <li><strong>Launch and approve UAC</strong>Elevation is required to read the full inventory.</li>
+            <li><strong>Review the automatic audit</strong>JSON and HTML reports are written immediately, before any change is possible.</li>
+            <li><strong>Pick a profile and select rows</strong>Choose a policy profile and select rows whose decision is <em>Remove</em>.</li>
+            <li><strong>Preview the plan</strong>Leave <strong>Uninstall mode</strong> unchecked and choose <strong>Preview selected</strong> to validate without changing the device.</li>
+            <li><strong>Execute deliberately</strong>Enable <strong>Uninstall mode</strong>, choose <strong>Uninstall selected</strong>, and approve the confirmation dialog.</li>
+            <li><strong>Review the result</strong>Check the post-execution inventory, exit codes, and reboot indicators in the exported report.</li>
+          </ol>
+          <div class="notice">
+            <span aria-hidden="true">i</span>
+            <p>Steps 1&ndash;4 are non-destructive. The device is only modified at step 5.</p>
+          </div>
+
+          <h2 id="grid">Reading the grid</h2>
+          <p>Rows carry friendly product and status labels plus a color-coded category for quick triage. Hover a category for its meaning, or a product name for its exact technical identifier. Exported reports always retain the original untruncated values.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Category</th><th>What it means</th></tr></thead>
+              <tbody>
+                <tr><td>Antivirus / Security</td><td>Endpoint protection. Audit-only unless the security gate is enabled.</td></tr>
+                <tr><td>OEM Control Panel</td><td>Vendor settings and hardware-control surface. Usually preserved.</td></tr>
+                <tr><td>Hardware / Recovery</td><td>Firmware, driver, or recovery dependency. Preserved by policy.</td></tr>
+                <tr><td>Trialware</td><td>Time-limited bundled software.</td></tr>
+                <tr><td>Consumer App</td><td>Games, media, and consumer promotions.</td></tr>
+                <tr><td>Bloatware</td><td>Promotional, registration, and welcome utilities.</td></tr>
+                <tr><td>OEM Support / Updates</td><td>Vendor support assistants and update managers.</td></tr>
+                <tr><td>Background Component</td><td>Telemetry and customer-experience agents.</td></tr>
+                <tr><td>OEM Utility</td><td>Other vendor-supplied tooling.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="gates">The two authorization gates</h2>
+          <p>Some software is deliberately harder to remove than a checkbox.</p>
+
+          <h3>Include security apps</h3>
+          <p>Endpoint protection stays audit-only unless this is explicitly enabled in uninstall mode. Enabling it does <em>not</em> override allowlists, protected-software safeguards, manual-review catalog entries, or command validation. Active Security Center products are guarded independently of catalog metadata.</p>
+
+          <h3>Include remote tools</h3>
+          <p>Remote-management tools appear in a dedicated investigation panel on the right, not in the main list. Removing one requires <em>all</em> of: uninstall mode, this separate authorization, an eligible policy decision, row selection, and final confirmation. Under <code>Conservative</code> policy an organization blocklist match is additionally required.</p>
+          <div class="notice notice-danger">
+            <span aria-hidden="true">!</span>
+            <p><strong>ConnectWise and ScreenConnect cannot be removed.</strong> They are classified as approved management software and are preserved even with remote-tool removal and an aggressive organization blocklist both enabled.</p>
+          </div>
+
+          <h2 id="profiles">Policy profiles</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Profile</th><th>Automatic eligibility</th></tr></thead>
+              <tbody>
+                <tr><td><code>Conservative</code> <span class="badge badge-success">default</span></td><td>Catalog entries marked <code>Safe</code> only</td></tr>
+                <tr><td><code>Balanced</code></td><td><code>Safe</code> plus cataloged <code>Caution</code> entries, with confirmation</td></tr>
+                <tr><td><code>Aggressive</code></td><td><code>Safe</code> and <code>Caution</code>; <code>ManualReview</code> remains protected</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>No profile makes <code>ManualReview</code> entries eligible. <code>Aggressive</code> widens which cataloged entries are considered, not which safety checks apply. See the <a href="reference.html#policy">policy file reference</a> to set this centrally.</p>
+
+          <h2 id="refusals">When an item will not remove</h2>
+          <p>If a row is <code>manual-review</code> or skipped, the report records why. These are fail-closed outcomes by design, not bugs.</p>
+          <ul>
+            <li><strong>Low or tied match confidence</strong> &mdash; the tool cannot prove which product it is.</li>
+            <li><strong>Protected software</strong> &mdash; it matched an RMM, VPN, backup, driver, or firmware guard.</li>
+            <li><strong>No supported backend</strong> &mdash; it is a service, scheduled task, or registry artifact without a dedicated tested handler.</li>
+            <li><strong>Gate not enabled</strong> &mdash; it is endpoint protection or a remote tool and the matching authorization was off.</li>
+            <li><strong>Command validation failed</strong> &mdash; the vendor uninstall string was not safely executable.</li>
+          </ul>
+          <p>If you believe an item should be cataloged differently, <a href="https://github.com/ithealthtech/PreloadedAVRemover/issues/new?template=catalog_request.yml">open a catalog request</a>.</p>
+
+          <h2 id="after">After the run</h2>
+          <p>Reports are your evidence. See the <a href="reference.html#reports">report reference</a> for the artifacts, the hash-chained audit log, and exit-code meanings.</p>
+          <div class="notice notice-warning">
+            <span aria-hidden="true">!</span>
+            <p><strong>There is no automatic rollback.</strong> Vendor uninstallers are not transactional. Reinstall removed software from the OEM support portal, the Microsoft Store, or your approved package source. The report records item-specific guidance.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">O</span><span>OEM Endpoint Cleanup</span></a>
+        <p class="footer-note">Audit-first OEM bloatware and antivirus-trial removal for Windows fleets. Dry-run by default.</p>
+      </div>
+      <div><h3>Learn</h3><a href="guide.html">Operator guide</a><a href="reference.html">Reference</a><a href="support.html">Support</a></div>
+      <div><h3>Project</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover">Repository</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Latest release</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/issues">Issues</a></div>
+      <div><h3>Policy</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/CONTRIBUTING.md">Contributing</a><p class="footer-note">&copy; <span data-current-year></span> IT Health Tech LLC &middot; GPL-3.0-only</p></div>
+    </div>
+  </footer>
+
+  <div class="sr-only" aria-live="polite" data-live-region></div>
+</body>
+</html>

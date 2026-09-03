@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reference for OEM Endpoint Cleanup: policy file schema, report artifacts, exit codes, unattended MSI deployment, and RMM ingestion.">
+  <meta name="theme-color" content="#0b0a17">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Reference &middot; OEM Endpoint Cleanup</title>
+  <link rel="icon" href="images/it-health-tech-mark.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="OEM Endpoint Cleanup documentation home">
+        <span class="brand-mark" aria-hidden="true">O</span>
+        <span>OEM Endpoint Cleanup</span>
+      </a>
+      <nav class="site-nav" data-site-nav aria-label="Primary navigation">
+        <a href="index.html">Overview</a>
+        <a href="guide.html">Operator guide</a>
+        <a href="reference.html" aria-current="page">Reference</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Download</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" type="button" data-doc-theme-toggle aria-label="Use light documentation theme">&#9728;</button>
+        <button class="menu-button" type="button" data-menu-toggle aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Reference</p>
+        <h1>Policy, reports, and deployment.</h1>
+        <p class="hero-copy">Everything you need to deploy the tool through an RMM and ingest its output centrally.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container docs-layout">
+        <nav class="toc" aria-label="On this page">
+          <h2>On this page</h2>
+          <a href="#policy">Policy file</a>
+          <a href="#lists">Allow and block lists</a>
+          <a href="#reports">Report artifacts</a>
+          <a href="#exit-codes">Exit codes</a>
+          <a href="#deploy">Unattended deployment</a>
+          <a href="#rollout">Suggested rollout</a>
+        </nav>
+
+        <div class="docs-content">
+          <h2 id="policy">Policy file</h2>
+          <p>Organization policy is optional. Without a policy file the tool runs in its safest configuration: the <code>Conservative</code> profile with dry-run enabled. Place the file at:</p>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="#policy-path">Copy</button>
+            <pre><code id="policy-path">C:\ProgramData\OemCleanup\policy.json</code></pre>
+          </div>
+          <div class="notice">
+            <span aria-hidden="true">i</span>
+            <p>A malformed policy file <strong>fails closed</strong> to conservative dry-run behavior rather than being partially applied.</p>
+          </div>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="#policy-example">Copy</button>
+            <pre><code id="policy-example">{
+  "profile": "Conservative",
+  "dryRun": true,
+  "force": false,
+  "allowSecurityProductRemoval": false,
+  "allowRemoteManagementRemoval": false,
+  "processTimeoutSeconds": 900,
+  "allowList": ["ConnectWise*", "*ScreenConnect*", "Lenovo Vantage", "*SupportAssist*"],
+  "blockList": ["WildTangent Games"],
+  "reportDirectory": "C:\\ProgramData\\OemCleanup\\Reports"
+}</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>profile</code></td><td>string</td><td><code>Conservative</code></td><td><code>Conservative</code>, <code>Balanced</code>, or <code>Aggressive</code></td></tr>
+                <tr><td><code>dryRun</code></td><td>bool</td><td><code>true</code></td><td>When true, no process is ever started</td></tr>
+                <tr><td><code>force</code></td><td>bool</td><td><code>false</code></td><td>Suppresses the final confirmation for an already-authorized action</td></tr>
+                <tr><td><code>allowSecurityProductRemoval</code></td><td>bool</td><td><code>false</code></td><td>Enables the endpoint-protection gate</td></tr>
+                <tr><td><code>allowRemoteManagementRemoval</code></td><td>bool</td><td><code>false</code></td><td>Enables the remote-tool gate</td></tr>
+                <tr><td><code>processTimeoutSeconds</code></td><td>int</td><td><code>900</code></td><td>Per-uninstaller bound, clamped to 30&ndash;3600</td></tr>
+                <tr><td><code>allowList</code></td><td>string[]</td><td>empty</td><td>Wildcard patterns that are never removed</td></tr>
+                <tr><td><code>blockList</code></td><td>string[]</td><td>empty</td><td>Wildcard patterns promoted toward eligibility</td></tr>
+                <tr><td><code>reportDirectory</code></td><td>string</td><td>see above</td><td>Output location</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="notice notice-danger">
+            <span aria-hidden="true">!</span>
+            <p><strong>Treat <code>policy.json</code> as privileged.</strong> Anyone who can write it can set <code>force: true</code> and suppress the confirmation prompt for authorized actions. Restrict its ACL to administrators.</p>
+          </div>
+
+          <h2 id="lists">Allow and block lists</h2>
+          <p>Wildcards <code>*</code> and <code>?</code> are supported in both lists. <strong>The allowlist always wins over the blocklist.</strong></p>
+          <p>A blocklist entry can promote a cataloged <code>Caution</code> item to removal eligibility, but it cannot bypass:</p>
+          <ul>
+            <li>protected-software patterns (RMM, VPN, backup, encryption, drivers, firmware)</li>
+            <li>the endpoint-protection authorization gate</li>
+            <li><code>ManualReview</code> classification</li>
+            <li>an unsupported or unimplemented removal backend</li>
+          </ul>
+
+          <h2 id="reports">Report artifacts</h2>
+          <p>Reports are written on <em>every</em> run, including audit-only runs where nothing is removed.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>*.json</code></td><td>Machine-readable schema 2.2 for RMM/MSP ingestion</td></tr>
+                <tr><td><code>*.html</code></td><td>Human-readable device, inventory, decision, and execution report</td></tr>
+                <tr><td><code>*.jsonl</code></td><td>Hash-chained audit events</td></tr>
+                <tr><td><code>*-execution.jsonl</code></td><td>Commands, results, errors, exit codes, reboot flags, post-execution inventory</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Each JSONL event embeds the hash of the previous event, forming a chain. Whole-log SHA-256 checksums are recorded in the report, so removing or editing an event is detectable.</p>
+          <div class="notice notice-warning">
+            <span aria-hidden="true">!</span>
+            <p>Reports contain hostname, user context, serial number, BIOS version, and full software inventory. Restrict report directory ACLs and control RMM ingestion access accordingly.</p>
+          </div>
+
+          <h2 id="exit-codes">Exit codes</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>0</code></td><td>Success</td></tr>
+                <tr><td><code>1603</code></td><td>Fatal error during installation (vendor failure)</td></tr>
+                <tr><td><code>3010</code></td><td>Success, reboot required</td></tr>
+                <tr><td><code>1641</code></td><td>Success, reboot initiated</td></tr>
+                <tr><td>timeout</td><td>Reported as a distinct outcome, not as an installer failure</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Failed uninstallers preserve bounded diagnostic output in the result, so reports show the vendor or Windows deployment error rather than only a code.</p>
+
+          <h2 id="deploy">Unattended deployment</h2>
+          <p>Standard Windows Installer properties apply.</p>
+          <p>All users (elevated):</p>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="#msi-machine">Copy</button>
+            <pre><code id="msi-machine">msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""</code></pre>
+          </div>
+          <p>Current user:</p>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="#msi-user">Copy</button>
+            <pre><code id="msi-user">msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1</code></pre>
+          </div>
+          <p>Push <code>policy.json</code> as part of the same deployment so every technician runs the same profile, allowlist, and report directory rather than relying on per-run UI choices.</p>
+
+          <h2 id="rollout">Suggested rollout</h2>
+          <ol class="step-list">
+            <li><strong>Ring test</strong>Deploy to a small ring covering each OEM model you support.</li>
+            <li><strong>Collect dry-run reports</strong>Run in dry-run and gather the JSON reports centrally.</li>
+            <li><strong>Review per model</strong>Check catalog matches and decisions before enabling uninstall mode.</li>
+            <li><strong>Widen gradually</strong>Expand the ring only once a model's results are stable.</li>
+          </ol>
+          <div class="notice">
+            <span aria-hidden="true">i</span>
+            <p>OEM product names, installer technology, and supported silent flags vary by model and release, so ring testing matters more here than for typical software.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">O</span><span>OEM Endpoint Cleanup</span></a>
+        <p class="footer-note">Audit-first OEM bloatware and antivirus-trial removal for Windows fleets. Dry-run by default.</p>
+      </div>
+      <div><h3>Learn</h3><a href="guide.html">Operator guide</a><a href="reference.html">Reference</a><a href="support.html">Support</a></div>
+      <div><h3>Project</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover">Repository</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Latest release</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/issues">Issues</a></div>
+      <div><h3>Policy</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/CONTRIBUTING.md">Contributing</a><p class="footer-note">&copy; <span data-current-year></span> IT Health Tech LLC &middot; GPL-3.0-only</p></div>
+    </div>
+  </footer>
+
+  <div class="sr-only" aria-live="polite" data-live-region></div>
+</body>
+</html>
