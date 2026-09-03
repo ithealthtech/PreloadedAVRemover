@@ -49,7 +49,7 @@ Stable production release.
 
 ### Verified
 
-79/79 automated tests passed. Release build and full MSI/setup/portable packaging
+93/93 automated tests passed. Release build and full MSI/setup/portable packaging
 completed with zero warnings and zero errors. Application and setup UI self-tests passed.
 SHA-256 manifest independently revalidated. Microsoft Defender found no threats in the
 published artifacts.
