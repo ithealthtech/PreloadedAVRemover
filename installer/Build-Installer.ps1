@@ -98,7 +98,7 @@ $msiPath = Get-ChildItem -LiteralPath $msiOutput -Recurse -Filter "$msiBase.msi"
 if (-not $msiPath) { throw 'The MSI build completed without producing the expected file.' }
 
 Copy-Item -LiteralPath (Join-Path $appOutput 'PreloadedAVRemover.exe') -Destination $portableStage
-foreach ($name in 'README.md','LICENSE','NOTICE','policy.example.json','TEST_REPORT.md') { Copy-Item -LiteralPath (Join-Path $repoRoot $name) -Destination $portableStage }
+foreach ($name in 'README.md','LICENSE','NOTICE','policy.example.json','docs\test-report.md') { Copy-Item -LiteralPath (Join-Path $repoRoot $name) -Destination $portableStage }
 $portableName = "OEM-Endpoint-Cleanup-$versionSlug-portable-win-x64.zip"
 $portablePath = Join-Path $artifacts $portableName
 Compress-Archive -Path (Join-Path $portableStage '*') -DestinationPath $portablePath -CompressionLevel Optimal

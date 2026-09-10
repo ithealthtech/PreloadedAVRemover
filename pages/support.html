@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Troubleshooting OEM Endpoint Cleanup: why an item was skipped, SmartScreen warnings, failed uninstallers, and how to report an issue.">
+  <meta name="theme-color" content="#0b0a17">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Support &middot; OEM Endpoint Cleanup</title>
+  <link rel="icon" href="images/it-health-tech-mark.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="OEM Endpoint Cleanup documentation home">
+        <span class="brand-mark" aria-hidden="true">O</span>
+        <span>OEM Endpoint Cleanup</span>
+      </a>
+      <nav class="site-nav" data-site-nav aria-label="Primary navigation">
+        <a href="index.html">Overview</a>
+        <a href="guide.html">Operator guide</a>
+        <a href="reference.html">Reference</a>
+        <a href="support.html" aria-current="page">Support</a>
+        <a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Download</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" type="button" data-doc-theme-toggle aria-label="Use light documentation theme">&#9728;</button>
+        <button class="menu-button" type="button" data-menu-toggle aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Support</p>
+        <h1>Troubleshooting</h1>
+        <p class="hero-copy">Most surprises are the safety model working as designed. Start here before filing an issue.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">Common questions</p>
+          <h2>Why did it do that?</h2>
+        </div>
+
+        <div class="accordion">
+          <details>
+            <summary>An item I wanted removed shows as manual-review or skipped</summary><div>
+            <p>This is usually intentional. The report records the specific reason. The common causes:</p>
+            <ul>
+              <li><strong>Low or tied match confidence</strong> &mdash; the tool cannot prove which product it is, so it refuses to act.</li>
+              <li><strong>Protected software</strong> &mdash; it matched an RMM, VPN, backup, encryption, driver, or firmware guard. These are checked <em>before</em> your blocklist, so a wildcard cannot reach them.</li>
+              <li><strong>No supported backend</strong> &mdash; services, scheduled tasks, and registry artifacts are audit-only until a dedicated tested handler exists.</li>
+              <li><strong>Gate not enabled</strong> &mdash; endpoint protection and remote tools each need their own explicit authorization on top of uninstall mode.</li>
+              <li><strong>Command validation failed</strong> &mdash; the vendor uninstall string was not safely executable.</li>
+            </ul>
+            <p>If you believe the classification is wrong, <a href="https://github.com/ithealthtech/PreloadedAVRemover/issues/new?template=catalog_request.yml">open a catalog request</a>.</p>
+          </div></details>
+
+          <details>
+            <summary>I cannot remove ConnectWise or ScreenConnect</summary><div>
+            <p>By design, and there is no setting that changes it. Both are classified as approved management software and stay preserved even with remote-tool authorization enabled and an aggressive wildcard blocklist in policy. Remove them through your RMM tooling instead.</p>
+          </div></details>
+
+          <details>
+            <summary>SmartScreen blocked the download or the executable</summary><div>
+            <p>The published artifacts are not code-signed. Verify the download against the release <code>SHA256SUMS.txt</code> before running it:</p>
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="#support-hash">Copy</button>
+              <pre><code id="support-hash">Get-FileHash .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi -Algorithm SHA256</code></pre>
+            </div>
+            <p>For production distribution, re-sign the artifacts with an organization-controlled certificate.</p>
+          </div></details>
+
+          <details>
+            <summary>An uninstaller failed with 1603, or the row shows a timeout</summary><div>
+            <p><code>1603</code> is a vendor-side installation failure, not a tool failure. The report preserves the uninstaller's own output so you can see the vendor or Windows deployment error rather than just a code.</p>
+            <p>A timeout is reported as a distinct outcome. Uninstallers are bounded by <code>processTimeoutSeconds</code> (default 900, clamped to 30&ndash;3600). Vendor uninstallers that are password-protected, self-protected, or interactive will hit this &mdash; those need manual intervention or the vendor's own cleanup tool.</p>
+          </div></details>
+
+          <details>
+            <summary>Nothing happened when I clicked Uninstall selected</summary><div>
+            <p>Check, in order: is <strong>Uninstall mode</strong> enabled? Is the process elevated? Does the row's decision say <em>Remove</em> rather than manual-review? Is <code>dryRun</code> set to <code>true</code> in your deployed <code>policy.json</code>? Dry-run never starts a process, and it is the default.</p>
+          </div></details>
+
+          <details>
+            <summary>How do I undo a removal?</summary><div>
+            <p>You cannot undo it from the tool. Vendor uninstallers are not transactional, and the tool deliberately does not create restore points or attempt file and registry reconstruction. Reinstall from the OEM support portal, the Microsoft Store, or your approved package source &mdash; the report records item-specific reinstall guidance.</p>
+          </div></details>
+
+          <details>
+            <summary>Can I run it unattended across a fleet?</summary><div>
+            <p>Yes. Deploy the MSI with standard Windows Installer properties and push a <code>policy.json</code> alongside it. See <a href="reference.html#deploy">unattended deployment</a>. Ring-test each OEM model in dry-run first &mdash; product names and silent flags vary by model and release.</p>
+          </div></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">Still stuck</p>
+          <h2>Get help</h2>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <h3>Report a bug</h3>
+            <p>Include the version, install method, Windows and OEM model, your policy file, and the relevant report excerpt.</p>
+            <p><a class="button" href="https://github.com/ithealthtech/PreloadedAVRemover/issues/new?template=bug_report.yml">Open a bug report</a></p>
+          </article>
+          <article class="card">
+            <h3>Request catalog coverage</h3>
+            <p>Ask for software to be recognized, reclassified, or protected. Bring the exact DisplayName and Publisher.</p>
+            <p><a class="button" href="https://github.com/ithealthtech/PreloadedAVRemover/issues/new?template=catalog_request.yml">Open a catalog request</a></p>
+          </article>
+          <article class="card">
+            <h3>Report a vulnerability</h3>
+            <p>Anything that defeats the safety model. Report privately &mdash; never in a public issue.</p>
+            <p><a class="button button-danger" href="https://github.com/ithealthtech/PreloadedAVRemover/security/advisories/new">Private advisory</a></p>
+          </article>
+        </div>
+        <div class="notice notice-warning">
+          <span aria-hidden="true">!</span>
+          <p>Reports contain hostname, serial number, and full software inventory. <strong>Redact them</strong> before pasting anything into a public issue.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">O</span><span>OEM Endpoint Cleanup</span></a>
+        <p class="footer-note">Audit-first OEM bloatware and antivirus-trial removal for Windows fleets. Dry-run by default.</p>
+      </div>
+      <div><h3>Learn</h3><a href="guide.html">Operator guide</a><a href="reference.html">Reference</a><a href="support.html">Support</a></div>
+      <div><h3>Project</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover">Repository</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Latest release</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/issues">Issues</a></div>
+      <div><h3>Policy</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/CONTRIBUTING.md">Contributing</a><p class="footer-note">&copy; <span data-current-year></span> IT Health Tech LLC &middot; GPL-3.0-only</p></div>
+    </div>
+  </footer>
+
+  <div class="sr-only" aria-live="polite" data-live-region></div>
+</body>
+</html>

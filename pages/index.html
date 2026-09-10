@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Audit-first Windows utility that inventories, audits, and safely removes OEM bloatware and bundled antivirus trials with tamper-evident evidence for MSPs.">
+  <meta name="theme-color" content="#0b0a17">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>OEM Endpoint Cleanup</title>
+  <link rel="icon" href="images/it-health-tech-mark.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="OEM Endpoint Cleanup documentation home">
+        <span class="brand-mark" aria-hidden="true">O</span>
+        <span>OEM Endpoint Cleanup</span>
+      </a>
+      <nav class="site-nav" data-site-nav aria-label="Primary navigation">
+        <a href="index.html" aria-current="page">Overview</a>
+        <a href="guide.html">Operator guide</a>
+        <a href="reference.html">Reference</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Download</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" type="button" data-doc-theme-toggle aria-label="Use light documentation theme">&#9728;</button>
+        <button class="menu-button" type="button" data-menu-toggle aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">OEM Endpoint Cleanup 2.2.1</p>
+          <h1>Prove what is on the machine before you remove anything.</h1>
+          <p class="hero-copy">An audit-first Windows utility for MSPs. It inventories OEM bloatware and bundled antivirus trials, scores every match with evidence, evaluates each one against policy, and writes tamper-evident reports &mdash; all in dry-run by default.</p>
+          <div class="button-row">
+            <a class="button button-primary" href="https://github.com/ithealthtech/PreloadedAVRemover/releases/download/v2.2.1/OEM-Endpoint-Cleanup-Setup-2.2.1-win-x64.exe">Download setup launcher</a>
+            <a class="button" href="guide.html">Read the operator guide</a>
+            <a class="button" href="https://github.com/ithealthtech/PreloadedAVRemover">View on GitHub</a>
+          </div>
+        </div>
+        <aside class="hero-panel" aria-label="Current release">
+          <div class="release-line">
+            <div>
+              <span class="status-dot" aria-hidden="true"></span>
+              <span class="badge badge-success">Production release</span>
+            </div>
+            <strong>v2.2.1</strong>
+          </div>
+          <dl class="meta-list">
+            <div class="meta-row"><dt>Platform</dt><dd>Windows x64</dd></div>
+            <div class="meta-row"><dt>Runtime</dt><dd>.NET 8 (self-contained)</dd></div>
+            <div class="meta-row"><dt>Default profile</dt><dd>Conservative</dd></div>
+            <div class="meta-row"><dt>Default mode</dt><dd>Dry-run</dd></div>
+            <div class="meta-row"><dt>License</dt><dd>GPL-3.0-only</dd></div>
+          </dl>
+          <div class="notice notice-warning">
+            <span aria-hidden="true">!</span>
+            <p><strong>Nothing is removed by accident.</strong> A catalog match alone never executes a command &mdash; policy, backend support, elevation, and command validation must all pass first.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-compact">
+      <div class="container grid-4" aria-label="Product highlights">
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">01</div>
+          <h3>Audit before action</h3>
+          <p>Every run starts as a read-only inventory and writes JSON and HTML reports immediately, before any change is possible.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">02</div>
+          <h3>Evidence-scored matching</h3>
+          <p>Matches carry a 0&ndash;100 confidence score and readable rationale. Low-confidence and tied candidates fail closed to manual review.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">03</div>
+          <h3>Your tools stay put</h3>
+          <p>RMM, remote access, VPN, backup, encryption, drivers, and firmware are protected independently of any blocklist you write.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">04</div>
+          <h3>Defensible records</h3>
+          <p>Hash-chained JSONL audit events and RMM-ingestible JSON give you an evidence trail per device, not just a success message.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">The interface</p>
+          <h2>Triage a device at a glance</h2>
+          <p>OEM and optional software sits on the left; remote-management and potentially unwanted tools are routed to a separate investigation panel so they are never removed casually.</p>
+        </div>
+        <figure class="panel">
+          <img src="images/oem-endpoint-cleanup.png" alt="OEM Endpoint Cleanup main window showing categorized inventory, policy profile selector, and dry-run controls" loading="lazy">
+          <figcaption>The preview is captured before inventory begins and contains no hostname, serial number, or customer device data.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="quick-start">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">Quick start</p>
+          <h2>From download to a defensible report</h2>
+          <p>A first run changes nothing. You get a complete inventory and a written report before deciding whether to remove a single item.</p>
+        </div>
+        <div class="grid-2">
+          <ol class="step-list">
+            <li><strong>Install</strong>Run the setup launcher and pick per-machine, per-user, or portable.</li>
+            <li><strong>Launch and approve UAC</strong>Elevation is required to read the full inventory.</li>
+            <li><strong>Review the automatic audit</strong>JSON and HTML reports are written before you touch anything.</li>
+            <li><strong>Preview a plan</strong>Select rows marked <em>Remove</em> and choose <strong>Preview selected</strong> with uninstall mode off.</li>
+            <li><strong>Execute deliberately</strong>Enable uninstall mode, choose <strong>Uninstall selected</strong>, and confirm.</li>
+          </ol>
+          <div>
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="#home-msi-command">Copy</button>
+              <pre><code id="home-msi-command">msiexec.exe /i .\OEM-Endpoint-Cleanup-2.2.1-win-x64.msi /qn /norestart ALLUSERS=1 MSIINSTALLPERUSER=""</code></pre>
+            </div>
+            <div class="notice">
+              <span aria-hidden="true">i</span>
+              <p>Deploying through an RMM? The unattended MSI properties and the per-device report schema are documented in the <a href="reference.html">reference</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">Coverage</p>
+          <h2>What the catalog recognizes</h2>
+          <p>Filter the list to check whether a vendor or software class is covered before you deploy.</p>
+        </div>
+        <div data-filter-list>
+          <label class="field">
+            <span>Search coverage</span>
+            <input type="search" data-filter-input placeholder="Try &quot;Lenovo&quot;, &quot;antivirus&quot;, or &quot;AppX&quot;" aria-label="Search catalog coverage">
+          </label>
+          <ul class="step-list">
+            <li data-filter-item>Dell, Alienware, HP, ASUS, Acer, Lenovo, MSI, Samsung, Toshiba/Dynabook, Microsoft Surface, LG, Gigabyte, Razer, and Fujitsu hardware brands</li>
+            <li data-filter-item>Antivirus and browser-security trials preloaded by the manufacturer</li>
+            <li data-filter-item>Support assistants and OEM update managers</li>
+            <li data-filter-item>Registration, warranty, welcome, and promotional utilities</li>
+            <li data-filter-item>Telemetry and customer-experience agents</li>
+            <li data-filter-item>Consumer games, cloud-storage promotions, and selected AppX packages</li>
+            <li data-filter-item>OEM services and scheduled tasks, surfaced for audit and manual review</li>
+          </ul>
+          <p data-filter-empty style="display:none">No coverage entry matches that search.</p>
+        </div>
+        <div class="notice">
+          <span aria-hidden="true">&#10003;</span>
+          <p><strong>Preserved by policy:</strong> hardware-control suites, hotkeys, recovery tools, BIOS/firmware dependencies, drivers, audio/network/chipset components, RMM agents, remote-access tools, VPN clients, BitLocker tooling, and backup agents. ConnectWise and ScreenConnect are classified as approved management software and cannot be promoted to removal.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="section-kicker">Next steps</p>
+          <h2>Go deeper</h2>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <h3><a href="guide.html">Operator guide</a></h3>
+            <p>Safe usage, policy profiles, the two authorization gates, and how to read a report.</p>
+          </article>
+          <article class="card">
+            <h3><a href="reference.html">Reference</a></h3>
+            <p>Policy file schema, report artifacts, exit codes, and unattended deployment.</p>
+          </article>
+          <article class="card">
+            <h3><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/docs/architecture.md">Developer docs</a></h3>
+            <p>Architecture, trust boundaries, the security model, and how to build and test.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">O</span><span>OEM Endpoint Cleanup</span></a>
+        <p class="footer-note">Audit-first OEM bloatware and antivirus-trial removal for Windows fleets. Dry-run by default.</p>
+      </div>
+      <div><h3>Learn</h3><a href="guide.html">Operator guide</a><a href="reference.html">Reference</a><a href="support.html">Support</a></div>
+      <div><h3>Project</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover">Repository</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/releases/latest">Latest release</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/issues">Issues</a></div>
+      <div><h3>Policy</h3><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/ithealthtech/PreloadedAVRemover/blob/main/CONTRIBUTING.md">Contributing</a><p class="footer-note">&copy; <span data-current-year></span> IT Health Tech LLC &middot; GPL-3.0-only</p></div>
+    </div>
+  </footer>
+
+  <div class="sr-only" aria-live="polite" data-live-region></div>
+</body>
+</html>

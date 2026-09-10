@@ -1,0 +1,90 @@
+name: Catalog request
+description: Ask for OEM software to be recognized, reclassified, or protected
+title: "[catalog] "
+labels: ["catalog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for anything the catalog got wrong: software it does not recognize,
+        software classified too aggressively, or software that should be protected.
+
+        Read [docs/catalog.md](https://github.com/ithealthtech/PreloadedAVRemover/blob/main/docs/catalog.md)
+        first if you plan to open a pull request.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What are you asking for?
+      options:
+        - Recognize software that is currently unmatched
+        - Reclassify existing software (wrong risk level or category)
+        - Protect software that should never be removed
+        - Correct a match that fires on the wrong product
+    validations:
+      required: true
+
+  - type: input
+    id: display_name
+    attributes:
+      label: Exact DisplayName
+      description: Copy it verbatim from the uninstall registry key.
+      placeholder: Lenovo Vantage Service
+    validations:
+      required: true
+
+  - type: input
+    id: publisher
+    attributes:
+      label: Exact Publisher
+      placeholder: Lenovo Group Ltd.
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: OEM brand and hardware model
+      description: A specific model you observed this on.
+      placeholder: Lenovo ThinkPad T14 Gen 4
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why should it be classified this way?
+      description: |
+        If you are asking for removal eligibility, explain what the software does and why
+        removing it is safe. If you are asking for protection, explain what breaks.
+    validations:
+      required: true
+
+  - type: input
+    id: uninstall_string
+    attributes:
+      label: Vendor uninstall string
+      description: From the registry, if one exists. Leave blank if there is none.
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Known dependencies
+      description: Anything that depends on this software. Enter "none" if nothing does.
+
+  - type: textarea
+    id: report
+    attributes:
+      label: Relevant report excerpt
+      description: |
+        Paste the matching entry from the JSON report if you have one. Please redact
+        hostname and serial number first.
+      render: json
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have redacted hostname, serial number, and any customer-identifying data.
+          required: true
